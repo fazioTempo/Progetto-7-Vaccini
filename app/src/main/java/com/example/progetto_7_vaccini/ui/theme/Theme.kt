@@ -1,58 +1,56 @@
 package com.example.progetto_7_vaccini.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val LightColors = lightColorScheme(
+    primary          = Teal900,
+    onPrimary        = Color.White,
+    primaryContainer = Teal100,
+    onPrimaryContainer = Teal900,
+    secondary        = Teal700,
+    onSecondary      = Color.White,
+    background       = Surface,
+    onBackground     = Slate800,
+    surface          = Color.White,
+    onSurface        = Slate800,
+    surfaceVariant   = Slate50,
+    onSurfaceVariant = Slate600,
+    outline          = Slate200,
+    error            = Red700,
+    onError          = Color.White
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val DarkColors = darkColorScheme(
+    primary          = Teal600,
+    onPrimary        = Color.White,
+    primaryContainer = Teal900,
+    onPrimaryContainer = Teal100,
+    secondary        = Teal700,
+    onSecondary      = Color.White,
+    background       = Color(0xFF0A1A1A),
+    onBackground     = Color(0xFFE2F0EE),
+    surface          = Color(0xFF111F1F),
+    onSurface        = Color(0xFFE2F0EE),
+    surfaceVariant   = Color(0xFF1A2E2E),
+    onSurfaceVariant = Slate400,
+    outline          = Color(0xFF2D4444),
+    error            = Color(0xFFF87171),
+    onError          = Color(0xFF450A0A)
 )
 
 @Composable
-fun Progetto7VacciniTheme(
+fun VaccineBiologicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography  = Typography,
+        content     = content
     )
 }
