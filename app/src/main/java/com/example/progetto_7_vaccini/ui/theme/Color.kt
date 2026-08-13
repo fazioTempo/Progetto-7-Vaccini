@@ -29,6 +29,7 @@ val Slate800   = Color(0xFF1E293B)
 val Slate600   = Color(0xFF475569)
 val Slate400   = Color(0xFF94A3B8)
 val Slate200   = Color(0xFFE2E8F0)
+val Slate100   = Color(0xFFF1F5F9)
 val Slate50    = Color(0xFFF8FAFC)
 
 val Surface    = Color(0xFFF0F4F4)

@@ -70,7 +70,7 @@ enum class MedicalCondition(val label: String) {
 
 // ── Modelli di dominio ────────────────────────────────────────────────────────
 
-enum class VaccineStatus { RECOMMENDED, CONTRAINDICATED, CAUTION }
+enum class VaccineStatus { RECOMMENDED, CONTRAINDICATED, CAUTION, ALREADY_DONE }
 enum class VaccinePriority { ESSENTIAL, HIGH, ROUTINE }
 enum class VaccineType { LIVE, INACTIVATED, RECOMBINANT, SUBUNIT, MRNA, TOXOID }
 enum class ImmunoLevel(val label: String, val color: ImmunoColor) {
@@ -639,22 +639,32 @@ private fun biologicOverrides(biologic: BiologicType): Map<String, VaccineOverri
 fun getVaccineRecommendations(
     sex: Sex,
     biologic: BiologicType,
-    conditions: Set<MedicalCondition>
+    age: Int?,
+    conditions: Set<MedicalCondition>,
+    completedVaccines: Set<String>
 ): List<VaccineRec> {
     val overrides = biologicOverrides(biologic)
     return BASE_VACCINES.map { base ->
         val override = overrides[base.name]
+        var status = override?.status ?: base.defaultStatus
+        
+        // Se il vaccino è già stato fatto, cambiamo lo stato
+        if (completedVaccines.contains(base.name)) {
+            status = VaccineStatus.ALREADY_DONE
+        }
+
         var rec = VaccineRec(
             name     = base.name,
             brand    = base.brand,
             type     = base.type,
-            status   = override?.status ?: base.defaultStatus,
+            status   = status,
             reason   = buildReason(base.defaultReason, override?.extraReason),
             timing   = buildTiming(base.defaultTiming, override?.extraTiming),
             priority = override?.priority ?: base.defaultPriority
         )
         rec = applyConditionModifiers(rec, conditions)
         rec = applySexModifiers(rec, sex)
+        rec = applyAgeModifiers(rec, age)
         rec
     }
 }
@@ -724,4 +734,27 @@ private fun applySexModifiers(v: VaccineRec, sex: Sex): VaccineRec {
         return v.copy(reason = "${v.reason} Raccomandato nei maschi fino a 26 anni (incluso nel calendario vaccinale in molte regioni italiane).")
     }
     return v
+}
+
+private fun applyAgeModifiers(v: VaccineRec, age: Int?): VaccineRec {
+    if (age == null) return v
+    var u = v
+
+    // HPV: Raccomandato fino a 26 anni, decisione condivisa fino a 45
+    if (u.name.contains("HPV", ignoreCase = true)) {
+        u = when {
+            age <= 26 -> u.copy(priority = VaccinePriority.HIGH)
+            age <= 45 -> u.copy(priority = VaccinePriority.ROUTINE, reason = "${u.reason}\n\n[ETÀ] Tra 27 e 45 anni la vaccinazione è frutto di decisione clinica condivisa.")
+            else -> u.copy(status = VaccineStatus.CAUTION, reason = "Generalmente non raccomandato oltre i 45 anni.")
+        }
+    }
+
+    // Shingrix (Zoster): Priorità aumenta con l'età
+    if (u.name.contains("Shingrix", ignoreCase = true)) {
+        if (age >= 50) {
+            u = u.copy(priority = VaccinePriority.ESSENTIAL, reason = "${u.reason}\n\n[ETÀ] Sopra i 50 anni il rischio di Herpes Zoster e Nevralgia Post-Erpetica aumenta drasticamente.")
+        }
+    }
+
+    return u
 }

@@ -42,6 +42,7 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @Composable
 fun ResultsScreen(
     patientName    : String,
+    patientAge     : Int?,
     sex            : Sex,
     biologic       : BiologicType,
     recommendations: List<VaccineRec>,
@@ -49,6 +50,8 @@ fun ResultsScreen(
 ) {
     val recommended    = recommendations.filter { it.status == VaccineStatus.RECOMMENDED }
     val contraindicated = recommendations.filter { it.status == VaccineStatus.CONTRAINDICATED }
+    val alreadyDone    = recommendations.filter { it.status == VaccineStatus.ALREADY_DONE }
+    
     val essential      = recommended.filter { it.priority == VaccinePriority.ESSENTIAL }
     val routine        = recommended.filter { it.priority != VaccinePriority.ESSENTIAL }
 
@@ -93,6 +96,7 @@ fun ResultsScreen(
             item {
                 PatientSummaryCard(
                     name     = patientName,
+                    age      = patientAge,
                     sex      = sex,
                     biologic = biologic
                 )
@@ -152,6 +156,21 @@ fun ResultsScreen(
                 VaccineCard(vaccine = vaccine)
             }
 
+            // ── Already Done ──────────────────────────────────────────────────
+            if (alreadyDone.isNotEmpty()) {
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    SectionHeader(
+                        title     = "Vaccini completati",
+                        count     = alreadyDone.size,
+                        isPositive = true // Usiamo verde per indicare completato
+                    )
+                }
+                items(alreadyDone) { vaccine ->
+                    VaccineCard(vaccine = vaccine)
+                }
+            }
+
             // Footer
             item {
                 Spacer(Modifier.height(8.dp))
@@ -170,20 +189,25 @@ fun ResultsScreen(
 // ── Components ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PatientSummaryCard(name: String, sex: Sex, biologic: BiologicType) {
+private fun PatientSummaryCard(name: String, age: Int?, sex: Sex, biologic: BiologicType) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape    = RoundedCornerShape(16.dp),
         colors   = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LabeledValue(label = "Paziente", value = name)
-            LabeledValue(label = "Sesso", value = sex.label)
-            LabeledValue(label = "Terapia biologica", value = biologic.label)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabeledValue(label = "Paziente", value = name)
+                LabeledValue(label = "Terapia biologica", value = biologic.label)
+            }
+            Column(modifier = Modifier.width(IntrinsicSize.Max), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabeledValue(label = "Età", value = age?.toString() ?: "N/D")
+                LabeledValue(label = "Sesso", value = sex.label)
+            }
         }
     }
 }
@@ -276,8 +300,19 @@ private fun VaccineCard(vaccine: VaccineRec) {
     var expanded by remember { mutableStateOf(false) }
 
     val isContra    = vaccine.status == VaccineStatus.CONTRAINDICATED
-    val borderColor = if (isContra) Color(0xFFFCA5A5) else Color(0xFF6EE7B7)
-    val bgColor     = if (isContra) Color(0xFFFFF5F5) else Color.White
+    val isDone      = vaccine.status == VaccineStatus.ALREADY_DONE
+    
+    val borderColor = when {
+        isContra -> Color(0xFFFCA5A5)
+        isDone   -> Slate200
+        else     -> Color(0xFF6EE7B7)
+    }
+    
+    val bgColor     = when {
+        isContra -> Color(0xFFFFF5F5)
+        isDone   -> Slate50
+        else     -> Color.White
+    }
 
     Card(
         modifier  = Modifier
@@ -412,11 +447,13 @@ private fun StatusBadge(status: VaccineStatus) {
         VaccineStatus.RECOMMENDED    -> Triple(Emerald100, Emerald700, Emerald700)
         VaccineStatus.CONTRAINDICATED -> Triple(Red100,     Red700,     Red700)
         VaccineStatus.CAUTION        -> Triple(Color(0xFFFEF3C7), Amber700, Amber700)
+        VaccineStatus.ALREADY_DONE    -> Triple(Slate100, Slate600, Slate400)
     }
     val label = when (status) {
         VaccineStatus.RECOMMENDED    -> "Raccomandato"
         VaccineStatus.CONTRAINDICATED -> "Controindicato"
         VaccineStatus.CAUTION        -> "Precauzione"
+        VaccineStatus.ALREADY_DONE    -> "Già completato"
     }
     Row(
         modifier = Modifier

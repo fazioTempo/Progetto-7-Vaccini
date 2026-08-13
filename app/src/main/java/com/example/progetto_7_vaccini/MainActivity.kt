@@ -26,21 +26,24 @@ class MainActivity : ComponentActivity() {
                 // Simple two-screen navigation via state (no NavHost needed for this scope)
                 var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
                 var patientName by rememberSaveable { mutableStateOf("") }
+                var patientAge by rememberSaveable { mutableStateOf<Int?>(null) }
                 var patientSex by rememberSaveable { mutableStateOf<Sex?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
 
                 if (results == null) {
                     FormScreen(
-                        onSubmit = { name, sex, biologic, conditions ->
+                        onSubmit = { name, age, sex, biologic, conditions, history ->
                             patientName = name
+                            patientAge = age
                             patientSex = sex
                             patientBiologic = biologic
-                            results = getVaccineRecommendations(sex, biologic, conditions)
+                            results = getVaccineRecommendations(sex, biologic, age, conditions, history)
                         }
                     )
                 } else {
                     ResultsScreen(
                         patientName    = patientName,
+                        patientAge     = patientAge,
                         sex            = patientSex!!,
                         biologic       = patientBiologic!!,
                         recommendations = results!!,

@@ -27,17 +27,28 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormScreen(
-    onSubmit: (name: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>) -> Unit
+    onSubmit: (name: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf("") }
+    var ageStr       by rememberSaveable { mutableStateOf("") }
     var sex          by rememberSaveable { mutableStateOf<Sex?>(null) }
     var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(null) }
     val conditions   = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
+    val history      = rememberSaveable { mutableStateOf(setOf<String>()) }
 
     var sexExpanded      by remember { mutableStateOf(false) }
     var biologicExpanded by remember { mutableStateOf(false) }
 
     val isValid = name.isNotBlank() && sex != null && biologic != null
+
+    val vaccineHistoryOptions = listOf(
+        "Influenza (vaccino inattivato o ricombinante)",
+        "Pneumococcico coniugato (PCV15 o PCV20)",
+        "Epatite B",
+        "Herpes Zoster ricombinante (Shingrix)",
+        "Td / Tdap (Tetano-Difterite-Pertosse)",
+        "COVID-19 (mRNA o subunità proteica)"
+    )
 
     Scaffold(
         topBar = {
@@ -84,6 +95,18 @@ fun FormScreen(
                 value         = name,
                 onValueChange = { name = it },
                 placeholder   = { Text("Es. Mario Rossi", color = Slate400) },
+                modifier      = Modifier.fillMaxWidth(),
+                singleLine    = true,
+                shape         = RoundedCornerShape(12.dp),
+                colors        = outlinedFieldColors()
+            )
+
+            // ── Age ──────────────────────────────────────────────────────────
+            SectionLabel("Età")
+            OutlinedTextField(
+                value         = ageStr,
+                onValueChange = { if (it.length <= 3 && it.all { c -> c.isDigit() }) ageStr = it },
+                placeholder   = { Text("Es. 45", color = Slate400) },
                 modifier      = Modifier.fillMaxWidth(),
                 singleLine    = true,
                 shape         = RoundedCornerShape(12.dp),
@@ -174,10 +197,55 @@ fun FormScreen(
                 }
             }
 
+            // ── Vaccine history ───────────────────────────────────────────────
+            SectionLabel("Storia vaccinale  •  seleziona i vaccini già completati")
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                vaccineHistoryOptions.forEach { vaccineName ->
+                    val isSelected = history.value.contains(vaccineName)
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            history.value = if (isSelected) {
+                                history.value - vaccineName
+                            } else {
+                                history.value + vaccineName
+                            }
+                        },
+                        label = { Text(vaccineName, fontSize = 12.sp) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Teal100,
+                            selectedLabelColor = Teal900,
+                            containerColor = Color.White
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = isSelected,
+                            borderColor = Slate200,
+                            selectedBorderColor = Teal600
+                        )
+                    )
+                }
+            }
+
             // ── Submit ────────────────────────────────────────────────────────
             Spacer(Modifier.height(4.dp))
             Button(
-                onClick  = { if (isValid) onSubmit(name, sex!!, biologic!!, conditions.value) },
+                onClick  = { 
+                    if (isValid) {
+                        onSubmit(
+                            name, 
+                            ageStr.toIntOrNull(), 
+                            sex!!, 
+                            biologic!!, 
+                            conditions.value, 
+                            history.value
+                        ) 
+                    }
+                },
                 enabled  = isValid,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
