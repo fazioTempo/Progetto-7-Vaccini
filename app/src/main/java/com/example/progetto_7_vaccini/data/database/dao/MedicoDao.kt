@@ -16,4 +16,7 @@ interface MedicoDao {
 
     @Query("SELECT * FROM medico WHERE idUtente = :idUtente")
     suspend fun getMedicoByUtente(idUtente: Long): Medico?
+
+    @Query("SELECT * FROM medico")
+    suspend fun getTuttiIMedici(): List<Medico>
 }

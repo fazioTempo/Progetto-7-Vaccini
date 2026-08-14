@@ -42,6 +42,7 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @Composable
 fun ResultsScreen(
     patientName    : String,
+    patientSurname : String,
     patientAge     : Int?,
     sex            : Sex,
     biologic       : BiologicType,
@@ -96,6 +97,7 @@ fun ResultsScreen(
             item {
                 PatientSummaryCard(
                     name     = patientName,
+                    surname  = patientSurname,
                     age      = patientAge,
                     sex      = sex,
                     biologic = biologic
@@ -189,7 +191,7 @@ fun ResultsScreen(
 // ── Components ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PatientSummaryCard(name: String, age: Int?, sex: Sex, biologic: BiologicType) {
+private fun PatientSummaryCard(name: String, surname: String, age: Int?, sex: Sex, biologic: BiologicType) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape    = RoundedCornerShape(16.dp),
@@ -201,7 +203,7 @@ private fun PatientSummaryCard(name: String, age: Int?, sex: Sex, biologic: Biol
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LabeledValue(label = "Paziente", value = name)
+                LabeledValue(label = "Paziente", value = "$name $surname")
                 LabeledValue(label = "Terapia biologica", value = biologic.label)
             }
             Column(modifier = Modifier.width(IntrinsicSize.Max), verticalArrangement = Arrangement.spacedBy(8.dp)) {

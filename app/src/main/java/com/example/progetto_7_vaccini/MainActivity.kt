@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 // Form data state
                 var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
                 var patientName by rememberSaveable { mutableStateOf("") }
+                var patientSurname by rememberSaveable { mutableStateOf("") }
                 var patientAge by rememberSaveable { mutableStateOf<Int?>(null) }
                 var patientSex by rememberSaveable { mutableStateOf<Sex?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
@@ -58,14 +59,19 @@ class MainActivity : ComponentActivity() {
                     }
                     
                     AppScreen.REGISTER -> {
-                        RegistrationScreen(onBack = { currentScreen = AppScreen.LANDING })
+                        RegistrationScreen(
+                            database = database,
+                            onBack = { currentScreen = AppScreen.LANDING },
+                            onRegisterSuccess = { currentScreen = AppScreen.LOGIN }
+                        )
                     }
 
                     AppScreen.FORM -> {
                         FormScreen(
                             onBack = { currentScreen = AppScreen.LANDING },
-                            onSubmit = { name, age, sex, biologic, conditions, history ->
+                            onSubmit = { name, surname, age, sex, biologic, conditions, history ->
                                 patientName = name
+                                patientSurname = surname
                                 patientAge = age
                                 patientSex = sex
                                 patientBiologic = biologic
@@ -78,6 +84,7 @@ class MainActivity : ComponentActivity() {
                     AppScreen.RESULTS -> {
                         ResultsScreen(
                             patientName    = patientName,
+                            patientSurname = patientSurname,
                             patientAge     = patientAge,
                             sex            = patientSex!!,
                             biologic       = patientBiologic!!,

@@ -29,16 +29,17 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @Composable
 fun FormScreen(
     onBack: () -> Unit,
-    onSubmit: (name: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
+    onSubmit: (nome: String, cognome: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf("") }
+    var surname      by rememberSaveable { mutableStateOf("") }
     var ageStr       by rememberSaveable { mutableStateOf("") }
     var sex          by rememberSaveable { mutableStateOf<Sex?>(null) }
     var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(null) }
     val conditions   = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
     val history      = rememberSaveable { mutableStateOf(setOf<String>()) }
 
-    val isValid = name.isNotBlank() && sex != null && biologic != null
+    val isValid = name.isNotBlank() && surname.isNotBlank() && sex != null && biologic != null
 
     Scaffold(
         topBar = {
@@ -93,6 +94,8 @@ fun FormScreen(
             VaccineFormContent(
                 name = name,
                 onNameChange = { name = it },
+                surname = surname,
+                onSurnameChange = { surname = it },
                 ageStr = ageStr,
                 onAgeChange = { ageStr = it },
                 sex = sex,
@@ -111,7 +114,8 @@ fun FormScreen(
                 onClick  = { 
                     if (isValid) {
                         onSubmit(
-                            name, 
+                            name,
+                            surname,
                             ageStr.toIntOrNull(), 
                             sex!!, 
                             biologic!!, 
@@ -147,6 +151,8 @@ fun FormScreen(
 fun VaccineFormContent(
     name: String,
     onNameChange: (String) -> Unit,
+    surname: String,
+    onSurnameChange: (String) -> Unit,
     ageStr: String,
     onAgeChange: (String) -> Unit,
     sex: Sex?,
@@ -171,17 +177,36 @@ fun VaccineFormContent(
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        // ── Patient name ──────────────────────────────────────────────────
-        SectionLabel("Nome del paziente")
-        OutlinedTextField(
-            value         = name,
-            onValueChange = onNameChange,
-            placeholder   = { Text("Es. Mario Rossi", color = Slate400) },
-            modifier      = Modifier.fillMaxWidth(),
-            singleLine    = true,
-            shape         = RoundedCornerShape(12.dp),
-            colors        = outlinedFieldColors()
-        )
+        // ── Patient name & surname ────────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                SectionLabel("Nome")
+                OutlinedTextField(
+                    value         = name,
+                    onValueChange = onNameChange,
+                    placeholder   = { Text("Es. Mario", color = Slate400) },
+                    modifier      = Modifier.fillMaxWidth(),
+                    singleLine    = true,
+                    shape         = RoundedCornerShape(12.dp),
+                    colors        = outlinedFieldColors()
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                SectionLabel("Cognome")
+                OutlinedTextField(
+                    value         = surname,
+                    onValueChange = onSurnameChange,
+                    placeholder   = { Text("Es. Rossi", color = Slate400) },
+                    modifier      = Modifier.fillMaxWidth(),
+                    singleLine    = true,
+                    shape         = RoundedCornerShape(12.dp),
+                    colors        = outlinedFieldColors()
+                )
+            }
+        }
 
         // ── Age ──────────────────────────────────────────────────────────
         SectionLabel("Età")

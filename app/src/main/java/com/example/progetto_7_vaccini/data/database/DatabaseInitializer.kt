@@ -20,75 +20,47 @@ object DatabaseInitializer {
         val curaBiologicaDao = database.curaBiologicaDao()
 
         // =========================
-        // MEDICO 1
+        // CURE BIOLOGICHE (Sincronizzate con BiologicType Enum)
+        // =========================
+        
+        com.example.progetto_7_vaccini.data.BiologicType.entries.forEach { type ->
+            curaBiologicaDao.inserisciCuraBiologica(
+                CuraBiologica(
+                    nome = type.label,
+                    principioAttivo = type.shortName
+                )
+            )
+        }
+
+        val tutteLeCure = curaBiologicaDao.getTutteLeCure()
+        val idCura1 = tutteLeCure.getOrNull(0)?.idCura ?: 1L
+        val idCura2 = tutteLeCure.getOrNull(1)?.idCura ?: 2L
+
+        // =========================
+        // MEDICI
         // =========================
 
         val idUtenteMedico1 = utenteDao.inserisciUtente(
-            Utente(
-                email = "medico1@gmail.com",
-                password = "password1",
-                ruolo = "MEDICO"
-            )
+            Utente(email = "medico1@gmail.com", password = "password1", ruolo = "MEDICO")
         )
-
         val idMedico1 = medicoDao.inserisciMedico(
-            Medico(
-                idUtente = idUtenteMedico1,
-                nome = "Mario",
-                cognome = "Rossi"
-            )
+            Medico(idUtente = idUtenteMedico1, nome = "Mario", cognome = "Rossi")
         )
-
-        // =========================
-        // MEDICO 2
-        // =========================
 
         val idUtenteMedico2 = utenteDao.inserisciUtente(
-            Utente(
-                email = "medico2@gmail.com",
-                password = "password2",
-                ruolo = "MEDICO"
-            )
+            Utente(email = "medico2@gmail.com", password = "password2", ruolo = "MEDICO")
         )
-
         val idMedico2 = medicoDao.inserisciMedico(
-            Medico(
-                idUtente = idUtenteMedico2,
-                nome = "Luigi",
-                cognome = "Bianchi"
-            )
+            Medico(idUtente = idUtenteMedico2, nome = "Luigi", cognome = "Bianchi")
         )
 
         // =========================
-        // CURE BIOLOGICHE
-        // =========================
-
-        val idCura1 = curaBiologicaDao.inserisciCuraBiologica(
-            CuraBiologica(
-                nome = "Cura biologica 1",
-                principioAttivo = "Principio attivo 1"
-            )
-        )
-
-        val idCura2 = curaBiologicaDao.inserisciCuraBiologica(
-            CuraBiologica(
-                nome = "Cura biologica 2",
-                principioAttivo = "Principio attivo 2"
-            )
-        )
-
-        // =========================
-        // PAZIENTE 1
+        // PAZIENTI DI ESEMPIO
         // =========================
 
         val idUtentePaziente1 = utenteDao.inserisciUtente(
-            Utente(
-                email = "paziente1@gmail.com",
-                password = "password1",
-                ruolo = "PAZIENTE"
-            )
+            Utente(email = "paziente1@gmail.com", password = "password1", ruolo = "PAZIENTE")
         )
-
         pazienteDao.inserisciPaziente(
             Paziente(
                 idUtente = idUtentePaziente1,
@@ -101,18 +73,9 @@ object DatabaseInitializer {
             )
         )
 
-        // =========================
-        // PAZIENTE 2
-        // =========================
-
         val idUtentePaziente2 = utenteDao.inserisciUtente(
-            Utente(
-                email = "paziente2@gmail.com",
-                password = "password2",
-                ruolo = "PAZIENTE"
-            )
+            Utente(email = "paziente2@gmail.com", password = "password2", ruolo = "PAZIENTE")
         )
-
         pazienteDao.inserisciPaziente(
             Paziente(
                 idUtente = idUtentePaziente2,
