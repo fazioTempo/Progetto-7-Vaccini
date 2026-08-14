@@ -21,7 +21,7 @@ import com.example.progetto_7_vaccini.data.database.DatabaseProvider
 import kotlinx.coroutines.launch
 
 enum class AppScreen {
-    LANDING, LOGIN, REGISTER, FORM, RESULTS
+    LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD
 }
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +36,8 @@ class MainActivity : ComponentActivity() {
             VaccineBiologicTheme {
                 // Navigation state
                 var currentScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
+                var previousScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
+                var userRole by rememberSaveable { mutableStateOf<String?>(null) } // "PAZIENTE", "MEDICO" o null (Ospite)
                 
                 // Form data state
                 var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
@@ -48,7 +50,10 @@ class MainActivity : ComponentActivity() {
                 when (currentScreen) {
                     AppScreen.LANDING -> {
                         LandingScreen(
-                            onGuestClick = { currentScreen = AppScreen.FORM },
+                            onGuestClick = { 
+                                userRole = null
+                                currentScreen = AppScreen.FORM 
+                            },
                             onLoginClick = { currentScreen = AppScreen.LOGIN },
                             onRegisterClick = { currentScreen = AppScreen.REGISTER }
                         )
@@ -62,7 +67,10 @@ class MainActivity : ComponentActivity() {
                         RegistrationScreen(
                             database = database,
                             onBack = { currentScreen = AppScreen.LANDING },
-                            onRegisterSuccess = { currentScreen = AppScreen.LOGIN }
+                            onRegisterSuccess = { 
+                                userRole = "PAZIENTE"
+                                currentScreen = AppScreen.LOGIN 
+                            }
                         )
                     }
 
@@ -89,7 +97,24 @@ class MainActivity : ComponentActivity() {
                             sex            = patientSex!!,
                             biologic       = patientBiologic!!,
                             recommendations = results!!,
-                            onBack = { currentScreen = AppScreen.FORM }
+                            onBack = { currentScreen = AppScreen.FORM },
+                            onModificaDati = { currentScreen = AppScreen.FORM },
+                            onChangePassword = { 
+                                previousScreen = AppScreen.RESULTS
+                                currentScreen = AppScreen.NEW_PASSWORD 
+                            },
+                            onLogout = { currentScreen = AppScreen.LANDING },
+                            userRole = userRole
+                        )
+                    }
+
+                    AppScreen.NEW_PASSWORD -> {
+                        NewPasswordScreen(
+                            onBack = { currentScreen = previousScreen },
+                            onConfirm = { newPassword ->
+                                // Qui andrebbe la logica per salvare la password nel DB
+                                currentScreen = previousScreen
+                            }
                         )
                     }
                 }

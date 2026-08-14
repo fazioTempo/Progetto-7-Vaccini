@@ -47,7 +47,11 @@ fun ResultsScreen(
     sex            : Sex,
     biologic       : BiologicType,
     recommendations: List<VaccineRec>,
-    onBack         : () -> Unit
+    onBack         : () -> Unit,
+    onModificaDati : () -> Unit,
+    onChangePassword: () -> Unit,
+    onLogout       : () -> Unit,
+    userRole       : String? = null // Riceve il ruolo dell'utente loggato
 ) {
     val recommended    = recommendations.filter { it.status == VaccineStatus.RECOMMENDED }
     val contraindicated = recommendations.filter { it.status == VaccineStatus.CONTRAINDICATED }
@@ -79,7 +83,15 @@ fun ResultsScreen(
                     Text(
                         text  = "Raccomandazioni vaccinali",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White
+                        color = Color.White,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TendinaUser(
+                        onModifica = onModificaDati,
+                        onChangePassword = onChangePassword,
+                        onLogout = onLogout,
+                        modifier = Modifier.size(40.dp),
+                        userRole = userRole
                     )
                 }
             }
