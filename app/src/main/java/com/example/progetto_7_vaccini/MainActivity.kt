@@ -16,11 +16,19 @@ import com.example.progetto_7_vaccini.data.getVaccineRecommendations
 import com.example.progetto_7_vaccini.screens.FormScreen
 import com.example.progetto_7_vaccini.screens.ResultsScreen
 import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
+import androidx.lifecycle.lifecycleScope
+import com.example.progetto_7_vaccini.data.database.DatabaseInitializer
+import com.example.progetto_7_vaccini.data.database.DatabaseProvider
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val database = DatabaseProvider.getDatabase(applicationContext)
+        lifecycleScope.launch {
+            DatabaseInitializer.inizializza(database)
+        }
         setContent {
             VaccineBiologicTheme {
                 // Simple two-screen navigation via state (no NavHost needed for this scope)

@@ -9,7 +9,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Medico
 interface MedicoDao {
 
     @Insert
-    suspend fun inserisciMedico(medico: Medico)
+    suspend fun inserisciMedico(medico: Medico): Long
 
     @Query("SELECT * FROM medico WHERE idMedico = :id")
     suspend fun getMedico(id: Long): Medico?

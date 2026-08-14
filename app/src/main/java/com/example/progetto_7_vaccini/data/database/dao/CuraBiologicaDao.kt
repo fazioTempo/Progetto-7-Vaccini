@@ -9,7 +9,7 @@ import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
 interface CuraBiologicaDao {
 
     @Insert
-    suspend fun inserisciCura(cura: CuraBiologica)
+    suspend fun inserisciCuraBiologica(curaBiologica: CuraBiologica): Long
 
     @Query("SELECT * FROM cura_biologica WHERE idCura = :id")
     suspend fun getCura(id: Long): CuraBiologica?

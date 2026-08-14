@@ -9,11 +9,14 @@ import com.example.progetto_7_vaccini.data.database.entities.Utente
 interface UtenteDao {
 
     @Insert
-    suspend fun inserisciUtente(utente: Utente)
+    suspend fun inserisciUtente(utente: Utente): Long
 
     @Query("SELECT * FROM utente WHERE idUtente = :id")
     suspend fun getUtente(id: Long): Utente?
 
     @Query("SELECT * FROM utente WHERE email = :email")
     suspend fun getUtenteByEmail(email: String): Utente?
+
+    @Query("SELECT COUNT(*) FROM utente WHERE ruolo = 'MEDICO'")
+    suspend fun contaMedici(): Int
 }

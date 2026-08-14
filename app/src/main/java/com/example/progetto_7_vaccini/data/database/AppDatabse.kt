@@ -2,6 +2,7 @@ package com.example.progetto_7_vaccini.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.example.progetto_7_vaccini.data.database.dao.CondizioneClinicaDao
 import com.example.progetto_7_vaccini.data.database.dao.CuraBiologicaDao
 import com.example.progetto_7_vaccini.data.database.dao.MedicoDao
@@ -35,6 +36,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Vaccino
     ],
     version = 1
 )
+@TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun utenteDao(): UtenteDao
