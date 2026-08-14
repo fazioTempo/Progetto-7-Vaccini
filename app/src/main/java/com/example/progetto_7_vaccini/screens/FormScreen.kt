@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +28,7 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormScreen(
+    onBack: () -> Unit,
     onSubmit: (name: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf("") }
@@ -36,19 +38,7 @@ fun FormScreen(
     val conditions   = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
     val history      = rememberSaveable { mutableStateOf(setOf<String>()) }
 
-    var sexExpanded      by remember { mutableStateOf(false) }
-    var biologicExpanded by remember { mutableStateOf(false) }
-
     val isValid = name.isNotBlank() && sex != null && biologic != null
-
-    val vaccineHistoryOptions = listOf(
-        "Influenza (vaccino inattivato o ricombinante)",
-        "Pneumococcico coniugato (PCV15 o PCV20)",
-        "Epatite B",
-        "Herpes Zoster ricombinante (Shingrix)",
-        "Td / Tdap (Tetano-Difterite-Pertosse)",
-        "COVID-19 (mRNA o subunità proteica)"
-    )
 
     Scaffold(
         topBar = {
@@ -56,21 +46,32 @@ fun FormScreen(
                 modifier = Modifier.background(Teal900)
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Text(
-                    text = "STRUMENTO CLINICO",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Teal100,
-                    letterSpacing = 1.2.sp
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "Guida alla vaccinazione in\nterapia biologica",
-                    style = MaterialTheme.typography.displayMedium,
-                    color = Color.White,
-                    lineHeight = 32.sp
-                )
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Indietro",
+                        tint = Color.White
+                    )
+                }
+                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                    Text(
+                        text = "STRUMENTO CLINICO",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Teal100,
+                        letterSpacing = 1.2.sp
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Guida alla vaccinazione in\nterapia biologica",
+                        style = MaterialTheme.typography.displayMedium,
+                        color = Color.White,
+                        lineHeight = 32.sp
+                    )
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
@@ -89,147 +90,20 @@ fun FormScreen(
                 color = Slate600
             )
 
-            // ── Patient name ──────────────────────────────────────────────────
-            SectionLabel("Nome del paziente")
-            OutlinedTextField(
-                value         = name,
-                onValueChange = { name = it },
-                placeholder   = { Text("Es. Mario Rossi", color = Slate400) },
-                modifier      = Modifier.fillMaxWidth(),
-                singleLine    = true,
-                shape         = RoundedCornerShape(12.dp),
-                colors        = outlinedFieldColors()
+            VaccineFormContent(
+                name = name,
+                onNameChange = { name = it },
+                ageStr = ageStr,
+                onAgeChange = { ageStr = it },
+                sex = sex,
+                onSexChange = { sex = it },
+                biologic = biologic,
+                onBiologicChange = { biologic = it },
+                conditions = conditions.value,
+                onConditionsChange = { conditions.value = it },
+                history = history.value,
+                onHistoryChange = { history.value = it }
             )
-
-            // ── Age ──────────────────────────────────────────────────────────
-            SectionLabel("Età")
-            OutlinedTextField(
-                value         = ageStr,
-                onValueChange = { if (it.length <= 3 && it.all { c -> c.isDigit() }) ageStr = it },
-                placeholder   = { Text("Es. 45", color = Slate400) },
-                modifier      = Modifier.fillMaxWidth(),
-                singleLine    = true,
-                shape         = RoundedCornerShape(12.dp),
-                colors        = outlinedFieldColors()
-            )
-
-            // ── Sex dropdown ──────────────────────────────────────────────────
-            SectionLabel("Sesso biologico")
-            ExposedDropdownMenuBox(
-                expanded        = sexExpanded,
-                onExpandedChange = { sexExpanded = !sexExpanded }
-            ) {
-                OutlinedTextField(
-                    value         = sex?.label ?: "",
-                    onValueChange = {},
-                    readOnly      = true,
-                    placeholder   = { Text("Seleziona…", color = Slate400) },
-                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sexExpanded) },
-                    modifier      = Modifier.fillMaxWidth().menuAnchor(),
-                    shape         = RoundedCornerShape(12.dp),
-                    colors        = outlinedFieldColors()
-                )
-                ExposedDropdownMenu(
-                    expanded        = sexExpanded,
-                    onDismissRequest = { sexExpanded = false }
-                ) {
-                    Sex.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text    = { Text(option.label) },
-                            onClick = {
-                                sex = option
-                                sexExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // ── Biologic dropdown ─────────────────────────────────────────────
-            SectionLabel("Tipo di terapia biologica")
-            ExposedDropdownMenuBox(
-                expanded        = biologicExpanded,
-                onExpandedChange = { biologicExpanded = !biologicExpanded }
-            ) {
-                OutlinedTextField(
-                    value         = biologic?.label ?: "",
-                    onValueChange = {},
-                    readOnly      = true,
-                    placeholder   = { Text("Seleziona tipo…", color = Slate400) },
-                    trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = biologicExpanded) },
-                    modifier      = Modifier.fillMaxWidth().menuAnchor(),
-                    shape         = RoundedCornerShape(12.dp),
-                    colors        = outlinedFieldColors()
-                )
-                ExposedDropdownMenu(
-                    expanded        = biologicExpanded,
-                    onDismissRequest = { biologicExpanded = false },
-                    modifier        = Modifier.heightIn(max = 320.dp)
-                ) {
-                    BiologicType.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text    = { Text(option.label, style = MaterialTheme.typography.bodySmall) },
-                            onClick = {
-                                biologic = option
-                                biologicExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            // ── Medical conditions ────────────────────────────────────────────
-            SectionLabel("Condizioni mediche rilevanti  •  seleziona tutte le pertinenti")
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                MedicalCondition.entries.forEach { condition ->
-                    val checked = conditions.value.contains(condition)
-                    ConditionCheckItem(
-                        label   = condition.label,
-                        checked = checked,
-                        onClick = {
-                            conditions.value = if (checked) {
-                                conditions.value - condition
-                            } else {
-                                conditions.value + condition
-                            }
-                        }
-                    )
-                }
-            }
-
-            // ── Vaccine history ───────────────────────────────────────────────
-            SectionLabel("Storia vaccinale  •  seleziona i vaccini già completati")
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                vaccineHistoryOptions.forEach { vaccineName ->
-                    val isSelected = history.value.contains(vaccineName)
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            history.value = if (isSelected) {
-                                history.value - vaccineName
-                            } else {
-                                history.value + vaccineName
-                            }
-                        },
-                        label = { Text(vaccineName, fontSize = 12.sp) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Teal100,
-                            selectedLabelColor = Teal900,
-                            containerColor = Color.White
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = isSelected,
-                            borderColor = Slate200,
-                            selectedBorderColor = Teal600
-                        )
-                    )
-                }
-            }
 
             // ── Submit ────────────────────────────────────────────────────────
             Spacer(Modifier.height(4.dp))
@@ -249,7 +123,7 @@ fun FormScreen(
                 enabled  = isValid,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
-                colors   = ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor         = Teal900,
                     contentColor           = Color.White,
                     disabledContainerColor = Slate200,
@@ -264,6 +138,175 @@ fun FormScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun VaccineFormContent(
+    name: String,
+    onNameChange: (String) -> Unit,
+    ageStr: String,
+    onAgeChange: (String) -> Unit,
+    sex: Sex?,
+    onSexChange: (Sex) -> Unit,
+    biologic: BiologicType?,
+    onBiologicChange: (BiologicType) -> Unit,
+    conditions: Set<MedicalCondition>,
+    onConditionsChange: (Set<MedicalCondition>) -> Unit,
+    history: Set<String>,
+    onHistoryChange: (Set<String>) -> Unit
+) {
+    var sexExpanded      by remember { mutableStateOf(false) }
+    var biologicExpanded by remember { mutableStateOf(false) }
+
+    val vaccineHistoryOptions = listOf(
+        "Influenza (vaccino inattivato o ricombinante)",
+        "Pneumococcico coniugato (PCV15 o PCV20)",
+        "Epatite B",
+        "Herpes Zoster ricombinante (Shingrix)",
+        "Td / Tdap (Tetano-Difterite-Pertosse)",
+        "COVID-19 (mRNA o subunità proteica)"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        // ── Patient name ──────────────────────────────────────────────────
+        SectionLabel("Nome del paziente")
+        OutlinedTextField(
+            value         = name,
+            onValueChange = onNameChange,
+            placeholder   = { Text("Es. Mario Rossi", color = Slate400) },
+            modifier      = Modifier.fillMaxWidth(),
+            singleLine    = true,
+            shape         = RoundedCornerShape(12.dp),
+            colors        = outlinedFieldColors()
+        )
+
+        // ── Age ──────────────────────────────────────────────────────────
+        SectionLabel("Età")
+        OutlinedTextField(
+            value         = ageStr,
+            onValueChange = { if (it.length <= 3 && it.all { c -> c.isDigit() }) onAgeChange(it) },
+            placeholder   = { Text("Es. 45", color = Slate400) },
+            modifier      = Modifier.fillMaxWidth(),
+            singleLine    = true,
+            shape         = RoundedCornerShape(12.dp),
+            colors        = outlinedFieldColors()
+        )
+
+        // ── Sex dropdown ──────────────────────────────────────────────────
+        SectionLabel("Sesso biologico")
+        ExposedDropdownMenuBox(
+            expanded        = sexExpanded,
+            onExpandedChange = { sexExpanded = !sexExpanded }
+        ) {
+            OutlinedTextField(
+                value         = sex?.label ?: "",
+                onValueChange = {},
+                readOnly      = true,
+                placeholder   = { Text("Seleziona…", color = Slate400) },
+                trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sexExpanded) },
+                modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                shape         = RoundedCornerShape(12.dp),
+                colors        = outlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                expanded        = sexExpanded,
+                onDismissRequest = { sexExpanded = false }
+            ) {
+                Sex.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text    = { Text(option.label) },
+                        onClick = {
+                            onSexChange(option)
+                            sexExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // ── Biologic dropdown ─────────────────────────────────────────────
+        SectionLabel("Tipo di terapia biologica")
+        ExposedDropdownMenuBox(
+            expanded        = biologicExpanded,
+            onExpandedChange = { biologicExpanded = !biologicExpanded }
+        ) {
+            OutlinedTextField(
+                value         = biologic?.label ?: "",
+                onValueChange = {},
+                readOnly      = true,
+                placeholder   = { Text("Seleziona tipo…", color = Slate400) },
+                trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = biologicExpanded) },
+                modifier      = Modifier.fillMaxWidth().menuAnchor(),
+                shape         = RoundedCornerShape(12.dp),
+                colors        = outlinedFieldColors()
+            )
+            ExposedDropdownMenu(
+                expanded        = biologicExpanded,
+                onDismissRequest = { biologicExpanded = false },
+                modifier        = Modifier.heightIn(max = 320.dp)
+            ) {
+                BiologicType.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text    = { Text(option.label, style = MaterialTheme.typography.bodySmall) },
+                        onClick = {
+                            onBiologicChange(option)
+                            biologicExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        // ── Medical conditions ────────────────────────────────────────────
+        SectionLabel("Condizioni mediche rilevanti  •  seleziona tutte le pertinenti")
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MedicalCondition.entries.forEach { condition ->
+                val checked = conditions.contains(condition)
+                ConditionCheckItem(
+                    label   = condition.label,
+                    checked = checked,
+                    onClick = {
+                        onConditionsChange(
+                            if (checked) conditions - condition else conditions + condition
+                        )
+                    }
+                )
+            }
+        }
+
+        // ── Vaccine history ───────────────────────────────────────────────
+        SectionLabel("Storia vaccinale  •  seleziona i vaccini già completati")
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            vaccineHistoryOptions.forEach { vaccineName ->
+                val isSelected = history.contains(vaccineName)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = {
+                        onHistoryChange(
+                            if (isSelected) history - vaccineName else history + vaccineName
+                        )
+                    },
+                    label = { Text(vaccineName, fontSize = 12.sp) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Teal100,
+                        selectedLabelColor = Teal900,
+                        containerColor = Color.White
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = Slate200,
+                        selectedBorderColor = Teal600
+                    )
+                )
+            }
         }
     }
 }
