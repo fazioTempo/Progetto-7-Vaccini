@@ -34,3 +34,5 @@ fun LoginScreen(onBack: () -> Unit) {
         }
     }
 }
+
+// Dovrai inserire la variabile "currentUserEmail" nel codice del main

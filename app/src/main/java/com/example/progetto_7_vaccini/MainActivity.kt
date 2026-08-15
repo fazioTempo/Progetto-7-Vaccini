@@ -59,10 +59,7 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AppScreen.FORM 
                             },
                             onLoginClick = { currentScreen = AppScreen.LOGIN },
-                            onRegisterClick = { 
-                                previousScreen = AppScreen.LANDING
-                                currentScreen = AppScreen.REGISTER 
-                            }
+                            onRegisterClick = { currentScreen = AppScreen.REGISTER }
                         )
                     }
                     
@@ -73,10 +70,9 @@ class MainActivity : ComponentActivity() {
                     AppScreen.REGISTER -> {
                         RegistrationScreen(
                             database = database,
-                            onBack = { currentScreen = previousScreen },
-                            onRegisterSuccess = { email ->
+                            onBack = { currentScreen = AppScreen.LANDING },
+                            onRegisterSuccess = { 
                                 userRole = "PAZIENTE"
-                                currentUserEmail = email
                                 currentScreen = AppScreen.LOGIN 
                             }
                         )
