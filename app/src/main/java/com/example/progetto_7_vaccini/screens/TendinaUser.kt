@@ -8,13 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
 
 /**
  * Composable che mostra un'icona profilo cliccabile.
@@ -28,10 +22,12 @@ fun TendinaUser(
     modifier: Modifier = Modifier,
     userRole: String? = null // null = Ospite, "PAZIENTE" = Paziente, "MEDICO" = Medico
 ) {
+    // Se l'utente è un guest (userRole == null), non mostriamo nulla
+    if (userRole == null) return
+
     var expanded by remember { mutableStateOf(false) }
 
     // Logica di visibilità basata sul ruolo
-    val isGuest = userRole == null
     val isPaziente = userRole == "PAZIENTE"
     val isMedico = userRole == "MEDICO"
 
@@ -52,8 +48,8 @@ fun TendinaUser(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            // L'Ospite e il Paziente vedono MODIFICA DATI. Il Medico no.
-            if (isGuest || isPaziente) {
+            // Il Paziente vede MODIFICA DATI. Il Medico no.
+            if (isPaziente) {
                 DropdownMenuItem(
                     text = {
                         Text(
@@ -68,59 +64,31 @@ fun TendinaUser(
                 )
             }
 
-            // Solo Paziente e Medico vedono CAMBIA PASSWORD e LOGOUT. L'Ospite no.
-            if (isPaziente || isMedico) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = "CAMBIA PASSWORD",
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        onChangePassword()
-                    }
-                )
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = "LOGOUT",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    onClick = {
-                        expanded = false
-                        onLogout()
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Menu Paziente")
-@Composable
-fun TendinaUserRegPreview() {
-    VaccineBiologicTheme {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .background(Color.White)
-                .border(1.dp, Color.LightGray)
-        ) {
+            // Sia Paziente che Medico vedono CAMBIA PASSWORD e LOGOUT.
             DropdownMenuItem(
-                text = { Text("MODIFICA DATI", style = MaterialTheme.typography.labelLarge) },
-                onClick = {}
+                text = {
+                    Text(
+                        text = "CAMBIA PASSWORD",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onChangePassword()
+                }
             )
             DropdownMenuItem(
-                text = { Text("CAMBIA PASSWORD", style = MaterialTheme.typography.labelLarge) },
-                onClick = {}
-            )
-            DropdownMenuItem(
-                text = { Text("LOGOUT", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error) },
-                onClick = {}
+                text = {
+                    Text(
+                        text = "LOGOUT",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                },
+                onClick = {
+                    expanded = false
+                    onLogout()
+                }
             )
         }
     }
