@@ -10,8 +10,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
 
 /**
  * Schermata per l'inserimento di una nuova password.
@@ -129,16 +127,5 @@ fun NewPasswordScreen(
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NewPasswordScreenPreview() {
-    VaccineBiologicTheme {
-        NewPasswordScreen(
-            onBack = {},
-            onConfirm = {}
-        )
     }
 }

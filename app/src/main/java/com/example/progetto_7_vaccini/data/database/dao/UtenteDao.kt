@@ -19,4 +19,7 @@ interface UtenteDao {
 
     @Query("SELECT COUNT(*) FROM utente WHERE ruolo = 'MEDICO'")
     suspend fun contaMedici(): Int
+
+    @Query("UPDATE utente SET password = :nuovaPassword WHERE email = :email")
+    suspend fun aggiornaPassword(email: String, nuovaPassword: String)
 }

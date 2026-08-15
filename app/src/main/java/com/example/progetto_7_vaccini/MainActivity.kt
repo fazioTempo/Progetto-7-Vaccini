@@ -16,6 +16,7 @@ import com.example.progetto_7_vaccini.data.*
 import com.example.progetto_7_vaccini.screens.*
 import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.rememberCoroutineScope
 import com.example.progetto_7_vaccini.data.database.DatabaseInitializer
 import com.example.progetto_7_vaccini.data.database.DatabaseProvider
 import kotlinx.coroutines.launch
@@ -38,6 +39,9 @@ class MainActivity : ComponentActivity() {
                 var currentScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
                 var previousScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
                 var userRole by rememberSaveable { mutableStateOf<String?>(null) } // "PAZIENTE", "MEDICO" o null (Ospite)
+                var currentUserEmail by rememberSaveable { mutableStateOf<String?>(null) }
+
+                val coroutineScope = rememberCoroutineScope()
                 
                 // Form data state
                 var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
@@ -55,7 +59,10 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = AppScreen.FORM 
                             },
                             onLoginClick = { currentScreen = AppScreen.LOGIN },
-                            onRegisterClick = { currentScreen = AppScreen.REGISTER }
+                            onRegisterClick = { 
+                                previousScreen = AppScreen.LANDING
+                                currentScreen = AppScreen.REGISTER 
+                            }
                         )
                     }
                     
@@ -66,9 +73,10 @@ class MainActivity : ComponentActivity() {
                     AppScreen.REGISTER -> {
                         RegistrationScreen(
                             database = database,
-                            onBack = { currentScreen = AppScreen.LANDING },
-                            onRegisterSuccess = { 
+                            onBack = { currentScreen = previousScreen },
+                            onRegisterSuccess = { email ->
                                 userRole = "PAZIENTE"
+                                currentUserEmail = email
                                 currentScreen = AppScreen.LOGIN 
                             }
                         )
@@ -112,8 +120,12 @@ class MainActivity : ComponentActivity() {
                         NewPasswordScreen(
                             onBack = { currentScreen = previousScreen },
                             onConfirm = { newPassword ->
-                                // Qui andrebbe la logica per salvare la password nel DB
-                                currentScreen = previousScreen
+                                coroutineScope.launch {
+                                    currentUserEmail?.let { email ->
+                                        database.utenteDao().aggiornaPassword(email, newPassword)
+                                    }
+                                    currentScreen = previousScreen
+                                }
                             }
                         )
                     }

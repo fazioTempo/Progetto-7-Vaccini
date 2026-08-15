@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 fun RegistrationScreen(
     database: AppDatabase,
     onBack: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    onRegisterSuccess: (String) -> Unit
 ) {
     // ── Credenziali ──────────────────────────────────────────────────────────
     var email by rememberSaveable { mutableStateOf("") }
@@ -250,7 +250,7 @@ fun RegistrationScreen(
                                 )
                             )
                             
-                            onRegisterSuccess()
+                            onRegisterSuccess(email)
                         }
                     }
                 },
