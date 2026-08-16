@@ -20,9 +20,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.example.progetto_7_vaccini.data.database.DatabaseInitializer
 import com.example.progetto_7_vaccini.data.database.DatabaseProvider
 import kotlinx.coroutines.launch
+import androidx.compose.material3.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.Icons
 
 enum class AppScreen {
-    LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD
+    LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, MEDICO_AREA
 }
 
 class MainActivity : ComponentActivity() {
@@ -51,6 +58,7 @@ class MainActivity : ComponentActivity() {
                 var patientSex by rememberSaveable { mutableStateOf<Sex?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
 
+                @OptIn(ExperimentalMaterial3Api::class)
                 when (currentScreen) {
                     AppScreen.LANDING -> {
                         LandingScreen(
@@ -64,7 +72,40 @@ class MainActivity : ComponentActivity() {
                     }
                     
                     AppScreen.LOGIN -> {
-                        LoginScreen(onBack = { currentScreen = AppScreen.LANDING })
+                        LoginScreen(
+                            database = database,
+                            onBack = { currentScreen = AppScreen.LANDING },
+                            onLoginSuccess = { email, role ->
+                                currentUserEmail = email
+                                userRole = role
+                                
+                                if (role == "MEDICO") {
+                                    currentScreen = AppScreen.MEDICO_AREA
+                                } else {
+                                    // Se è un paziente, carichiamo i dati e andiamo ai risultati
+                                    coroutineScope.launch {
+                                        val utente = database.utenteDao().getUtenteByEmail(email)
+                                        val paziente = utente?.let { database.pazienteDao().getPazienteByUtente(it.idUtente) }
+                                        
+                                        if (paziente != null) {
+                                            patientName = paziente.nome
+                                            patientSurname = paziente.cognome
+                                            patientAge = paziente.dataNascita.replace("Età: ", "").toIntOrNull()
+                                            patientSex = if (paziente.sesso == "M") Sex.MALE else Sex.FEMALE
+                                            
+                                            // Recupero la cura dal DB per mappare l'enum BiologicType
+                                            val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
+                                            patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
+                                            
+                                            // Calcolo le raccomandazioni (vuote per ora le condizioni/storia, andrebbero caricate anche quelle se presenti)
+                                            results = getVaccineRecommendations(patientSex!!, patientBiologic!!, patientAge, emptySet(), emptySet())
+                                            
+                                            currentScreen = AppScreen.RESULTS
+                                        }
+                                    }
+                                }
+                            }
+                        )
                     }
                     
                     AppScreen.REGISTER -> {
@@ -124,6 +165,26 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         )
+                    }
+
+                    AppScreen.MEDICO_AREA -> {
+                        // Schermata placeholder per l'area medico (lista pazienti)
+                        Scaffold(
+                            topBar = {
+                                CenterAlignedTopAppBar(
+                                    title = { Text("Area Medico") },
+                                    actions = {
+                                        IconButton(onClick = { currentScreen = AppScreen.LANDING }) {
+                                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
+                                        }
+                                    }
+                                )
+                            }
+                        ) { padding ->
+                            Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                Text("Benvenuto Dottore!\nLa lista pazienti sarà disponibile a breve.", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            }
+                        }
                     }
                 }
             }
