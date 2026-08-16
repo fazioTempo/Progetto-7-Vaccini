@@ -20,4 +20,14 @@ interface PazienteCondizioneDao {
     @Query("SELECT * FROM paziente_condizione WHERE idCondizione = :idCondizione")
     suspend fun getPazientiByCondizione(idCondizione: Long): List<PazienteCondizione>
 
+    @Query("""
+    DELETE FROM paziente_condizione
+    WHERE idPaziente = :idPaziente
+    AND idCondizione = :idCondizione
+""")
+    suspend fun rimuoviCondizione(
+        idPaziente: Long,
+        idCondizione: Long
+    )
+
 }

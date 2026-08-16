@@ -19,4 +19,10 @@ interface PazienteDao {
 
     @Query("SELECT * FROM paziente WHERE idMedico = :idMedico")
     suspend fun getPazientiByMedico(idMedico: Long): List<Paziente>
+
+    @Query("UPDATE paziente SET idCura = :idCura WHERE idPaziente = :idPaziente")
+    suspend fun aggiornaCura(
+        idPaziente: Long,
+        idCura: Long
+    )
 }
