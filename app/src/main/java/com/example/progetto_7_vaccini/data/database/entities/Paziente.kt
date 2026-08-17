@@ -44,5 +44,5 @@ data class Paziente(
 
     val dataNascita: String,
 
-    val sesso: String
+    val sesso: Sesso
 )

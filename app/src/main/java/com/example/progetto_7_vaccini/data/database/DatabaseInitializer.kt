@@ -3,6 +3,7 @@ package com.example.progetto_7_vaccini.data.database
 import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
 import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.data.database.entities.Utente
 
 object DatabaseInitializer {
@@ -69,7 +70,7 @@ object DatabaseInitializer {
                 nome = "Giovanni",
                 cognome = "Verdi",
                 dataNascita = "15/05/2000",
-                sesso = "M"
+                sesso = Sesso.MASCHIO,
             )
         )
 
@@ -84,7 +85,7 @@ object DatabaseInitializer {
                 nome = "Anna",
                 cognome = "Neri",
                 dataNascita = "20/08/2001",
-                sesso = "F"
+                sesso = Sesso.FEMMINA
             )
         )
     }

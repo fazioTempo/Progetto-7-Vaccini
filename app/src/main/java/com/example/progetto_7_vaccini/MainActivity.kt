@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.Icons
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 
 enum class AppScreen {
     LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, MEDICO_AREA
@@ -91,7 +92,7 @@ class MainActivity : ComponentActivity() {
                                             patientName = paziente.nome
                                             patientSurname = paziente.cognome
                                             patientAge = paziente.dataNascita.replace("Età: ", "").toIntOrNull()
-                                            patientSex = if (paziente.sesso == "M") Sex.MALE else Sex.FEMALE
+                                            patientSex = if (paziente.sesso == Sesso.MASCHIO) Sex.MALE else Sex.FEMALE
                                             
                                             // Recupero la cura dal DB per mappare l'enum BiologicType
                                             val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
