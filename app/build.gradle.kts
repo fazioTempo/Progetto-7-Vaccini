@@ -56,6 +56,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.compose.material:material-icons-core:1.6.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation(libs.jsoup)
+
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)

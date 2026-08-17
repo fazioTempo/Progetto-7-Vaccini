@@ -4,6 +4,8 @@ import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
 import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
+import com.example.progetto_7_vaccini.data.database.entities.BiologicType
+import com.example.progetto_7_vaccini.data.database.entities.Vaccino
 
 object DatabaseInitializer {
 
@@ -18,11 +20,42 @@ object DatabaseInitializer {
         val medicoDao = database.medicoDao()
         val pazienteDao = database.pazienteDao()
         val curaBiologicaDao = database.curaBiologicaDao()
+        val vacciniDao = database.vaccinoDao()
 
-        // =========================
-        // CURE BIOLOGICHE (Sincronizzate con BiologicType Enum)
-        // =========================
-        
+        val vaccinoDao = database.vaccinoDao()
+
+        val vaccini = listOf(
+            Vaccino(1, "Influenza (inattivato)", "CONSENTITO", false),
+            Vaccino(2, "Pneumococco PCV20", "CONSENTITO", false),
+            Vaccino(3, "Pneumococco PPSV23", "CONSENTITO", false),
+            Vaccino(4, "Epatite A", "CONSENTITO", false),
+            Vaccino(5, "Epatite B", "CONSENTITO", false),
+            Vaccino(6, "HPV", "CONSENTITO", false),
+            Vaccino(7, "Tetano-Difterite-Pertosse (Tdap)", "CONSENTITO", false),
+            Vaccino(8, "Polio IPV", "CONSENTITO", false),
+            Vaccino(9, "Meningococco ACWY", "CONSENTITO", false),
+            Vaccino(10, "Meningococco B", "CONSENTITO", false),
+            Vaccino(11, "COVID-19 mRNA", "CONSENTITO", false),
+            Vaccino(12, "Herpes Zoster (Shingrix)", "CONSENTITO", false),
+
+            Vaccino(20, "MMR", "CONTROINDICATO", true),
+            Vaccino(21, "Varicella", "CONTROINDICATO", true),
+            Vaccino(22, "Zoster vivo (Zostavax)", "CONTROINDICATO", true),
+            Vaccino(23, "Rotavirus", "CONTROINDICATO", true),
+            Vaccino(24, "Febbre gialla", "CONTROINDICATO", true),
+            Vaccino(25, "Polio OPV", "CONTROINDICATO", true),
+            Vaccino(26, "Tifo orale (Ty21a)", "CONTROINDICATO", true),
+            Vaccino(27, "BCG", "CONTROINDICATO", true),
+
+            Vaccino(30, "Vaccini vivi per viaggi internazionali", "VALUTARE", true)
+        )
+
+        vaccini.forEach { vaccinoDao.inserisciVaccino(it) }
+
+
+        //=============================
+        //INSRIMENTO TERAPIE BIOLOGICHE
+        //=============================
         com.example.progetto_7_vaccini.data.BiologicType.entries.forEach { type ->
             curaBiologicaDao.inserisciCuraBiologica(
                 CuraBiologica(
@@ -87,5 +120,7 @@ object DatabaseInitializer {
                 sesso = "F"
             )
         )
+
+
     }
 }
