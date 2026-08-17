@@ -17,9 +17,11 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun NewPasswordScreen(
+    currentActualPassword: String,
     onBack: () -> Unit,
     onConfirm: (String) -> Unit
 ) {
+    var currentPasswordInput by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -40,7 +42,30 @@ fun NewPasswordScreen(
                     .align(Alignment.Center),
                 horizontalAlignment = Alignment.Start
             ) {
-                // PRIMA ZONA (Centro-Alto)
+                // ZONA PASSWORD ATTUALE
+                Text(
+                    text = "INSERISCI PASSWORD ATTUALE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = currentPasswordInput,
+                    onValueChange = {
+                        currentPasswordInput = it
+                        errorMessage = null
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    placeholder = { Text("Password Attuale", color = Color.Gray) }
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // PRIMA ZONA (Centro-Alto) - Password Nuova
                 Text(
                     text = "INSERISCI NUOVA PASSWORD",
                     style = MaterialTheme.typography.labelSmall,
@@ -61,9 +86,9 @@ fun NewPasswordScreen(
                     placeholder = { Text("Password", color = Color.Gray) }
                 )
 
-                Spacer(modifier = Modifier.height(48.dp)) // Spaziatura tra le due zone
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // SECONDA ZONA (Centro-Basso)
+                // SECONDA ZONA (Centro-Basso) - Conferma Password Nuova
                 Text(
                     text = "INSERISCI NUOVAMENTE LA NUOVA PASSWORD",
                     style = MaterialTheme.typography.labelSmall,
@@ -112,12 +137,14 @@ fun NewPasswordScreen(
                 }
                 Button(
                     onClick = {
-                        if (password.isEmpty()) {
-                            errorMessage = "La password non può essere vuota"
+                        if (currentPasswordInput != currentActualPassword) {
+                            errorMessage = "La password attuale non è corretta"
+                        } else if (password.isEmpty()) {
+                            errorMessage = "La nuova password non può essere vuota"
                         } else if (password == confirmPassword) {
                             onConfirm(password)
                         } else {
-                            errorMessage = "Le password non coincidono"
+                            errorMessage = "Le nuove password non coincidono"
                         }
                     },
                     modifier = Modifier.weight(1f),

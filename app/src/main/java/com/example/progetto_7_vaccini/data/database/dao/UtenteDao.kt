@@ -26,6 +26,9 @@ interface UtenteDao {
         nuovaEmail: String
     )
 
+    @Query("UPDATE utente SET email = :nuovaEmail WHERE email = :vecchiaEmail")
+    suspend fun aggiornaEmailByEmail(vecchiaEmail: String, nuovaEmail: String)
+
     @Query("UPDATE utente SET password = :nuovaPassword WHERE email = :email")
     suspend fun aggiornaPassword(email: String, nuovaPassword: String)
 }

@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
                 var previousScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
                 var userRole by rememberSaveable { mutableStateOf<String?>(null) } // "PAZIENTE", "MEDICO" o null (Ospite)
                 var currentUserEmail by rememberSaveable { mutableStateOf<String?>(null) }
+                var actualPassword by rememberSaveable { mutableStateOf("") }
 
                 val coroutineScope = rememberCoroutineScope()
                 
@@ -58,6 +59,9 @@ class MainActivity : ComponentActivity() {
                 var patientAge by rememberSaveable { mutableStateOf<Int?>(null) }
                 var patientSex by rememberSaveable { mutableStateOf<Sex?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
+                var patientConditions by rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
+                var patientHistory by rememberSaveable { mutableStateOf(setOf<String>()) }
+                var isEditingPatient by rememberSaveable { mutableStateOf(false) }
 
                 @OptIn(ExperimentalMaterial3Api::class)
                 when (currentScreen) {
@@ -65,7 +69,8 @@ class MainActivity : ComponentActivity() {
                         LandingScreen(
                             onGuestClick = { 
                                 userRole = null
-                                currentScreen = AppScreen.FORM 
+                                isEditingPatient = false
+                                currentScreen = AppScreen.FORM
                             },
                             onLoginClick = { currentScreen = AppScreen.LOGIN },
                             onRegisterClick = { currentScreen = AppScreen.REGISTER }
@@ -113,7 +118,7 @@ class MainActivity : ComponentActivity() {
                         RegistrationScreen(
                             database = database,
                             onBack = { currentScreen = AppScreen.LANDING },
-                            onRegisterSuccess = { 
+                            onRegisterSuccess = {
                                 userRole = "PAZIENTE"
                                 currentScreen = AppScreen.LOGIN 
                             }
@@ -122,13 +127,41 @@ class MainActivity : ComponentActivity() {
 
                     AppScreen.FORM -> {
                         FormScreen(
-                            onBack = { currentScreen = AppScreen.LANDING },
+                            initialName = if (isEditingPatient) patientName else "",
+                            initialSurname = if (isEditingPatient) patientSurname else "",
+                            initialAge = if (isEditingPatient) (patientAge?.toString() ?: "") else "",
+                            initialSex = if (isEditingPatient) patientSex else null,
+                            initialBiologic = if (isEditingPatient) patientBiologic else null,
+                            initialConditions = if (isEditingPatient) patientConditions else emptySet(),
+                            initialHistory = if (isEditingPatient) patientHistory else emptySet(),
+                            initialEmail = currentUserEmail ?: "",
+                            isEditing = isEditingPatient,
+                            onBack = { 
+                                if (isEditingPatient) currentScreen = AppScreen.RESULTS
+                                else currentScreen = AppScreen.LANDING 
+                            },
+                            onEmailUpdate = { nuovaEmail, callback ->
+                                coroutineScope.launch {
+                                    val utenteEsistente = database.utenteDao().getUtenteByEmail(nuovaEmail)
+                                    if (utenteEsistente == null || nuovaEmail == currentUserEmail) {
+                                        currentUserEmail?.let { vecchiaEmail ->
+                                            database.utenteDao().aggiornaEmailByEmail(vecchiaEmail, nuovaEmail)
+                                            currentUserEmail = nuovaEmail
+                                        }
+                                        callback(null) // Successo
+                                    } else {
+                                        callback("Email non valida")
+                                    }
+                                }
+                            },
                             onSubmit = { name, surname, age, sex, biologic, conditions, history ->
                                 patientName = name
                                 patientSurname = surname
                                 patientAge = age
                                 patientSex = sex
                                 patientBiologic = biologic
+                                patientConditions = conditions
+                                patientHistory = history
                                 results = getVaccineRecommendations(sex, biologic, age, conditions, history)
                                 currentScreen = AppScreen.RESULTS
                             }
@@ -143,11 +176,23 @@ class MainActivity : ComponentActivity() {
                             sex            = patientSex!!,
                             biologic       = patientBiologic!!,
                             recommendations = results!!,
-                            onBack = { currentScreen = AppScreen.FORM },
-                            onModificaDati = { currentScreen = AppScreen.FORM },
+                            onBack = { 
+                                isEditingPatient = true
+                                currentScreen = AppScreen.FORM 
+                            },
+                            onModificaDati = { 
+                                isEditingPatient = true
+                                currentScreen = AppScreen.FORM 
+                            },
                             onChangePassword = { 
-                                previousScreen = AppScreen.RESULTS
-                                currentScreen = AppScreen.NEW_PASSWORD 
+                                coroutineScope.launch {
+                                    currentUserEmail?.let { email ->
+                                        val utente = database.utenteDao().getUtenteByEmail(email)
+                                        actualPassword = utente?.password ?: ""
+                                    }
+                                    previousScreen = AppScreen.RESULTS
+                                    currentScreen = AppScreen.NEW_PASSWORD 
+                                }
                             },
                             onLogout = { currentScreen = AppScreen.LANDING },
                             userRole = userRole
@@ -156,6 +201,7 @@ class MainActivity : ComponentActivity() {
 
                     AppScreen.NEW_PASSWORD -> {
                         NewPasswordScreen(
+                            currentActualPassword = actualPassword,
                             onBack = { currentScreen = previousScreen },
                             onConfirm = { newPassword ->
                                 coroutineScope.launch {

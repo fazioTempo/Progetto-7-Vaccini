@@ -24,6 +24,7 @@ import com.example.progetto_7_vaccini.data.database.AppDatabase
 import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -246,7 +247,7 @@ fun RegistrationScreen(
                                     nome = name,
                                     cognome = surname,
                                     dataNascita = "Età: $ageStr", // Usiamo l'età per ora nel campo data
-                                    sesso = sex!!.label.take(1) // M o F
+                                    sesso = if (sex == Sex.MALE) Sesso.MASCHIO else Sesso.FEMMINA
                                 )
                             )
                             

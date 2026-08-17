@@ -28,51 +28,82 @@ import com.example.progetto_7_vaccini.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormScreen(
+    initialName: String = "",
+    initialSurname: String = "",
+    initialAge: String = "",
+    initialSex: Sex? = null,
+    initialBiologic: BiologicType? = null,
+    initialConditions: Set<MedicalCondition> = emptySet(),
+    initialHistory: Set<String> = emptySet(),
+    initialEmail: String = "",
+    isEditing: Boolean = false,
     onBack: () -> Unit,
+    onEmailUpdate: (String, (String?) -> Unit) -> Unit = { _, _ -> },
     onSubmit: (nome: String, cognome: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
-    var name         by rememberSaveable { mutableStateOf("") }
-    var surname      by rememberSaveable { mutableStateOf("") }
-    var ageStr       by rememberSaveable { mutableStateOf("") }
-    var sex          by rememberSaveable { mutableStateOf<Sex?>(null) }
-    var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(null) }
-    val conditions   = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
-    val history      = rememberSaveable { mutableStateOf(setOf<String>()) }
+    var name         by rememberSaveable { mutableStateOf(initialName) }
+    var surname      by rememberSaveable { mutableStateOf(initialSurname) }
+    var ageStr       by rememberSaveable { mutableStateOf(initialAge) }
+    var sex          by rememberSaveable { mutableStateOf<Sex?>(initialSex) }
+    var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(initialBiologic) }
+    val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
+    val history      = rememberSaveable { mutableStateOf(initialHistory) }
+
+    var email        by rememberSaveable { mutableStateOf(initialEmail) }
+    var isEmailEditable by remember { mutableStateOf(false) }
+    var emailError   by rememberSaveable { mutableStateOf<String?>(null) }
 
     val isValid = name.isNotBlank() && surname.isNotBlank() && sex != null && biologic != null
 
     Scaffold(
         topBar = {
-            Column(
-                modifier = Modifier.background(Teal900)
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.statusBars)
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+            if (!isEditing) {
+                Column(
+                    modifier = Modifier.background(Teal900)
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.statusBars)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Indietro",
-                        tint = Color.White
-                    )
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.padding(start = 8.dp, top = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Indietro",
+                            tint = Color.White
+                        )
+                    }
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                        Text(
+                            text = "STRUMENTO CLINICO",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Teal100,
+                            letterSpacing = 1.2.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Guida alla vaccinazione in\nterapia biologica",
+                            style = MaterialTheme.typography.displayMedium,
+                            color = Color.White,
+                            lineHeight = 32.sp
+                        )
+                    }
                 }
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-                    Text(
-                        text = "STRUMENTO CLINICO",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Teal100,
-                        letterSpacing = 1.2.sp
+            } else {
+                // Barra più semplice in stile Registration (per Modifica Dati)
+                TopAppBar(
+                    title = { Text("MODIFICA DATI", style = MaterialTheme.typography.titleMedium) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Teal900,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Guida alla vaccinazione in\nterapia biologica",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = Color.White,
-                        lineHeight = 32.sp
-                    )
-                }
+                )
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
@@ -85,11 +116,83 @@ fun FormScreen(
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text(
-                text = "Inserisci i dati del paziente per ottenere raccomandazioni vaccinali personalizzate in base al tipo di terapia biologica e alle condizioni cliniche associate.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Slate600
-            )
+            if (isEditing) {
+                // Sezione Email (solo in modalità Modifica)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SectionLabel("Email dell'account")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { 
+                                email = it
+                                emailError = null
+                            },
+                            modifier = Modifier.weight(1f),
+                            readOnly = !isEmailEditable,
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = outlinedFieldColors(),
+                            isError = emailError != null,
+                            textStyle = LocalTextStyle.current.copy(
+                                color = if (isEmailEditable) Color.Black else Color.Gray
+                            )
+                        )
+                        Button(
+                            onClick = {
+                                if (isEmailEditable) {
+                                    if (email.isNotBlank() && email.contains("@")) {
+                                        onEmailUpdate(email) { error ->
+                                            if (error == null) {
+                                                isEmailEditable = false
+                                                emailError = null
+                                            } else {
+                                                emailError = error
+                                            }
+                                        }
+                                    } else {
+                                        emailError = "Email non valida"
+                                    }
+                                } else {
+                                    isEmailEditable = true
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isEmailEditable) Emerald700 else Teal700
+                            )
+                        ) {
+                            Text(if (isEmailEditable) "CONFERMA" else "MODIFICA")
+                        }
+                    }
+                    if (emailError != null) {
+                        Text(
+                            text = emailError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = Slate200, thickness = 1.dp)
+
+                Text(
+                    text = "DATI SANITARI",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Teal700,
+                    fontWeight = FontWeight.Bold
+                )
+            } else {
+                Text(
+                    text = "Inserisci i dati del paziente per ottenere raccomandazioni vaccinali personalizzate in base al tipo di terapia biologica e alle condizioni cliniche associate.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Slate600
+                )
+            }
 
             VaccineFormContent(
                 name = name,
