@@ -29,6 +29,16 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.Icons
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
 
+fun Sex.toSesso(): Sesso = when (this) {
+    Sex.MALE -> Sesso.MASCHIO
+    Sex.FEMALE -> Sesso.FEMMINA
+}
+
+fun Sesso.toSex(): Sex = when (this) {
+    Sesso.MASCHIO -> Sex.MALE
+    Sesso.FEMMINA -> Sex.FEMALE
+}
+
 enum class AppScreen {
     LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, MEDICO_AREA
 }
@@ -97,7 +107,7 @@ class MainActivity : ComponentActivity() {
                                             patientName = paziente.nome
                                             patientSurname = paziente.cognome
                                             patientAge = paziente.dataNascita.replace("Età: ", "").toIntOrNull()
-                                            patientSex = if (paziente.sesso == Sesso.MASCHIO) Sex.MALE else Sex.FEMALE
+                                            patientSex = paziente.sesso.toSex()
                                             
                                             // Recupero la cura dal DB per mappare l'enum BiologicType
                                             val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)

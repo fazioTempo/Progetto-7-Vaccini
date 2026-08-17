@@ -26,6 +26,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.ui.theme.*
+import com.example.progetto_7_vaccini.toSesso
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -247,7 +248,7 @@ fun RegistrationScreen(
                                     nome = name,
                                     cognome = surname,
                                     dataNascita = "Età: $ageStr", // Usiamo l'età per ora nel campo data
-                                    sesso = if (sex == Sex.MALE) Sesso.MASCHIO else Sesso.FEMMINA
+                                    sesso = sex!!.toSesso()
                                 )
                             )
                             

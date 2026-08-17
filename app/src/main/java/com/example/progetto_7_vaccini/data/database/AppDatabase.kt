@@ -34,7 +34,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Vaccino
         RaccomandazioneVaccino::class,
         PazienteCondizione::class
     ],
-    version = 1
+    version = 2
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

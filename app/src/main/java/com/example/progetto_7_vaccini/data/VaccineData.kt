@@ -4,8 +4,7 @@ package com.example.progetto_7_vaccini.data
 
 enum class Sex(val label: String) {
     FEMALE("Femmina"),
-    MALE("Maschio"),
-    OTHER("Altro / non binario")
+    MALE("Maschio")
 }
 
 enum class BiologicType(val label: String, val shortName: String) {
