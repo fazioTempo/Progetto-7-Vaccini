@@ -86,7 +86,7 @@ fun ResultsScreen(
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
-                    TendinaUser(
+                    UserDropdownMenu(
                         onModifica = onModificaDati,
                         onChangePassword = onChangePassword,
                         onLogout = onLogout,

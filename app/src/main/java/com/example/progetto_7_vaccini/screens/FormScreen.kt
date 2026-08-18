@@ -25,6 +25,7 @@ import com.example.progetto_7_vaccini.data.BiologicType
 import com.example.progetto_7_vaccini.data.MedicalCondition
 import com.example.progetto_7_vaccini.data.Sex
 import com.example.progetto_7_vaccini.data.DateUtils
+import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,7 +147,7 @@ fun FormScreen(
                         Button(
                             onClick = {
                                 if (isEmailEditable) {
-                                    if (email.isNotBlank() && email.contains("@")) {
+                                    if (ValidationUtils.isValidEmail(email)) {
                                         onEmailUpdate(email) { error ->
                                             if (error == null) {
                                                 isEmailEditable = false
@@ -156,7 +157,7 @@ fun FormScreen(
                                             }
                                         }
                                     } else {
-                                        emailError = "Email non valida"
+                                        emailError = "Formato email non valido (es. nome@dominio.it)"
                                     }
                                 } else {
                                     isEmailEditable = true
@@ -291,7 +292,7 @@ fun VaccineFormContent(
                 SectionLabel("Nome")
                 OutlinedTextField(
                     value         = name,
-                    onValueChange = onNameChange,
+                    onValueChange = { if (ValidationUtils.isValidName(it)) onNameChange(it) },
                     placeholder   = { Text("Es. Mario", color = Slate400) },
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,
@@ -303,7 +304,7 @@ fun VaccineFormContent(
                 SectionLabel("Cognome")
                 OutlinedTextField(
                     value         = surname,
-                    onValueChange = onSurnameChange,
+                    onValueChange = { if (ValidationUtils.isValidName(it)) onSurnameChange(it) },
                     placeholder   = { Text("Es. Rossi", color = Slate400) },
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,

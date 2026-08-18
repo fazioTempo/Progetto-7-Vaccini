@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.progetto_7_vaccini.data.ValidationUtils
 
 /**
  * Schermata per l'inserimento di una nuova password.
@@ -139,8 +140,8 @@ fun NewPasswordScreen(
                     onClick = {
                         if (currentPasswordInput != currentActualPassword) {
                             errorMessage = "La password attuale non è corretta"
-                        } else if (password.isEmpty()) {
-                            errorMessage = "La nuova password non può essere vuota"
+                        } else if (!ValidationUtils.isValidPassword(password)) {
+                            errorMessage = "La nuova password deve contenere almeno 10 caratteri, una maiuscola, una minuscola, un numero e un carattere speciale"
                         } else if (password == confirmPassword) {
                             onConfirm(password)
                         } else {

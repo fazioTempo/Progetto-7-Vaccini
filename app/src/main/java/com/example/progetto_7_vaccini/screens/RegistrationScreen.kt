@@ -26,6 +26,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.data.DateUtils
+import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.ui.theme.*
 import com.example.progetto_7_vaccini.toSesso
 import kotlinx.coroutines.launch
@@ -66,8 +67,8 @@ fun RegistrationScreen(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
-            val isFormValid = email.isNotBlank() && 
-            password.isNotBlank() && 
+            val isFormValid = ValidationUtils.isValidEmail(email) && 
+            ValidationUtils.isValidPassword(password) && 
             password == confirmPassword &&
             name.isNotBlank() && 
             surname.isNotBlank() &&
@@ -147,7 +148,13 @@ fun RegistrationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = outlinedFieldColors()
+                colors = outlinedFieldColors(),
+                isError = password.isNotEmpty() && !ValidationUtils.isValidPassword(password),
+                supportingText = {
+                    if (password.isNotEmpty() && !ValidationUtils.isValidPassword(password)) {
+                        Text("Min. 10 car., 1 Maiusc., 1 Minusc., 1 Num., 1 Spec.")
+                    }
+                }
             )
 
             OutlinedTextField(

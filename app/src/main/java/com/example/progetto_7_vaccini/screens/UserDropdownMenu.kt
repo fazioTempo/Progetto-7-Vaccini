@@ -12,10 +12,10 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Composable che mostra un'icona profilo cliccabile.
- * Al clic apre un menu a tendina con le opzioni "MODIFICA" e "LOGOUT".
+ * Al clic apre un menu a tendina con le opzioni "MODIFICA", "CAMBIA PASSWORD" e "LOGOUT".
  */
 @Composable
-fun TendinaUser(
+fun UserDropdownMenu(
     onModifica: () -> Unit,
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
