@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
                 var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
                 var patientName by rememberSaveable { mutableStateOf("") }
                 var patientSurname by rememberSaveable { mutableStateOf("") }
+                var patientBirthDate by rememberSaveable { mutableStateOf("") }
                 var patientAge by rememberSaveable { mutableStateOf<Int?>(null) }
                 var patientSex by rememberSaveable { mutableStateOf<Sex?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
@@ -106,7 +107,8 @@ class MainActivity : ComponentActivity() {
                                         if (paziente != null) {
                                             patientName = paziente.nome
                                             patientSurname = paziente.cognome
-                                            patientAge = paziente.dataNascita.replace("Età: ", "").toIntOrNull()
+                                            patientBirthDate = paziente.dataNascita
+                                            patientAge = com.example.progetto_7_vaccini.data.DateUtils.calculateAge(paziente.dataNascita)
                                             patientSex = paziente.sesso.toSex()
                                             
                                             // Recupero la cura dal DB per mappare l'enum BiologicType
@@ -139,7 +141,7 @@ class MainActivity : ComponentActivity() {
                         FormScreen(
                             initialName = if (isEditingPatient) patientName else "",
                             initialSurname = if (isEditingPatient) patientSurname else "",
-                            initialAge = if (isEditingPatient) (patientAge?.toString() ?: "") else "",
+                            initialBirthDate = if (isEditingPatient) patientBirthDate else "",
                             initialSex = if (isEditingPatient) patientSex else null,
                             initialBiologic = if (isEditingPatient) patientBiologic else null,
                             initialConditions = if (isEditingPatient) patientConditions else emptySet(),
@@ -164,9 +166,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             },
-                            onSubmit = { name, surname, age, sex, biologic, conditions, history ->
+                            onSubmit = { name, surname, birthDate, sex, biologic, conditions, history ->
                                 patientName = name
                                 patientSurname = surname
+                                patientBirthDate = birthDate
+                                val age = com.example.progetto_7_vaccini.data.DateUtils.calculateAge(birthDate)
                                 patientAge = age
                                 patientSex = sex
                                 patientBiologic = biologic

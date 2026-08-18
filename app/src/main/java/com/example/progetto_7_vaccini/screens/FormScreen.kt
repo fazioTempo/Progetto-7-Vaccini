@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.example.progetto_7_vaccini.data.BiologicType
 import com.example.progetto_7_vaccini.data.MedicalCondition
 import com.example.progetto_7_vaccini.data.Sex
+import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +32,7 @@ import com.example.progetto_7_vaccini.ui.theme.*
 fun FormScreen(
     initialName: String = "",
     initialSurname: String = "",
-    initialAge: String = "",
+    initialBirthDate: String = "",
     initialSex: Sex? = null,
     initialBiologic: BiologicType? = null,
     initialConditions: Set<MedicalCondition> = emptySet(),
@@ -39,11 +41,11 @@ fun FormScreen(
     isEditing: Boolean = false,
     onBack: () -> Unit,
     onEmailUpdate: (String, (String?) -> Unit) -> Unit = { _, _ -> },
-    onSubmit: (nome: String, cognome: String, age: Int?, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
+    onSubmit: (nome: String, cognome: String, birthDate: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf(initialName) }
     var surname      by rememberSaveable { mutableStateOf(initialSurname) }
-    var ageStr       by rememberSaveable { mutableStateOf(initialAge) }
+    var birthDate    by rememberSaveable { mutableStateOf(initialBirthDate) }
     var sex          by rememberSaveable { mutableStateOf<Sex?>(initialSex) }
     var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(initialBiologic) }
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
@@ -199,8 +201,8 @@ fun FormScreen(
                 onNameChange = { name = it },
                 surname = surname,
                 onSurnameChange = { surname = it },
-                ageStr = ageStr,
-                onAgeChange = { ageStr = it },
+                birthDate = birthDate,
+                onBirthDateChange = { birthDate = it },
                 sex = sex,
                 onSexChange = { sex = it },
                 biologic = biologic,
@@ -219,7 +221,7 @@ fun FormScreen(
                         onSubmit(
                             name,
                             surname,
-                            ageStr.toIntOrNull(), 
+                            birthDate, 
                             sex!!, 
                             biologic!!, 
                             conditions.value, 
@@ -227,7 +229,7 @@ fun FormScreen(
                         ) 
                     }
                 },
-                enabled  = isValid,
+                enabled  = isValid && DateUtils.isValidDate(birthDate),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -256,8 +258,8 @@ fun VaccineFormContent(
     onNameChange: (String) -> Unit,
     surname: String,
     onSurnameChange: (String) -> Unit,
-    ageStr: String,
-    onAgeChange: (String) -> Unit,
+    birthDate: String,
+    onBirthDateChange: (String) -> Unit,
     sex: Sex?,
     onSexChange: (Sex) -> Unit,
     biologic: BiologicType?,
@@ -311,16 +313,53 @@ fun VaccineFormContent(
             }
         }
 
-        // ── Age ──────────────────────────────────────────────────────────
-        SectionLabel("Età")
+        // ── Birth Date ───────────────────────────────────────────────────
+        SectionLabel("Data di nascita")
+        
+        var showDatePicker by remember { mutableStateOf(false) }
+        val datePickerState = rememberDatePickerState()
+
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            onBirthDateChange(DateUtils.formatTimestamp(it))
+                        }
+                        showDatePicker = false
+                    }) {
+                        Text("OK", color = Teal700, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("ANNULLA", color = Slate600)
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
         OutlinedTextField(
-            value         = ageStr,
-            onValueChange = { if (it.length <= 3 && it.all { c -> c.isDigit() }) onAgeChange(it) },
-            placeholder   = { Text("Es. 45", color = Slate400) },
-            modifier      = Modifier.fillMaxWidth(),
-            singleLine    = true,
+            value         = birthDate,
+            onValueChange = { },
+            readOnly      = true,
+            placeholder   = { Text("Seleziona data…", color = Slate400) },
+            trailingIcon  = { 
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "Seleziona data",
+                        tint = Teal700
+                    )
+                }
+            },
+            modifier      = Modifier.fillMaxWidth().clickable { showDatePicker = true },
             shape         = RoundedCornerShape(12.dp),
-            colors        = outlinedFieldColors()
+            colors        = outlinedFieldColors(),
+            isError       = birthDate.isNotEmpty() && !DateUtils.isValidDate(birthDate)
         )
 
         // ── Sex dropdown ──────────────────────────────────────────────────

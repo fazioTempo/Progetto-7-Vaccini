@@ -25,6 +25,7 @@ import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
+import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.ui.theme.*
 import com.example.progetto_7_vaccini.toSesso
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ fun RegistrationScreen(
     // ── Dati Paziente (Riuso VaccineFormContent) ────────────────────────────
     var name by rememberSaveable { mutableStateOf("") }
     var surname by rememberSaveable { mutableStateOf("") }
-    var ageStr by rememberSaveable { mutableStateOf("") }
+    var birthDate by rememberSaveable { mutableStateOf("") }
     var sex by rememberSaveable { mutableStateOf<Sex?>(null) }
     var biologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
     val conditions = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
@@ -72,7 +73,8 @@ fun RegistrationScreen(
             surname.isNotBlank() &&
             sex != null && 
             biologic != null &&
-            selectedDoctor != null
+            selectedDoctor != null &&
+            DateUtils.isValidDate(birthDate)
 
     Scaffold(
         topBar = {
@@ -208,8 +210,8 @@ fun RegistrationScreen(
                 onNameChange = { name = it },
                 surname = surname,
                 onSurnameChange = { surname = it },
-                ageStr = ageStr,
-                onAgeChange = { ageStr = it },
+                birthDate = birthDate,
+                onBirthDateChange = { birthDate = it },
                 sex = sex,
                 onSexChange = { sex = it },
                 biologic = biologic,
@@ -247,7 +249,7 @@ fun RegistrationScreen(
                                     idCura = idCuraSelezionata,
                                     nome = name,
                                     cognome = surname,
-                                    dataNascita = "Età: $ageStr", // Usiamo l'età per ora nel campo data
+                                    dataNascita = birthDate,
                                     sesso = sex!!.toSesso()
                                 )
                             )
