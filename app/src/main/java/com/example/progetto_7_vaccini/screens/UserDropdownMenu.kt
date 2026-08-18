@@ -20,11 +20,8 @@ fun UserDropdownMenu(
     onChangePassword: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier,
-    userRole: String? = null // null = Ospite, "PAZIENTE" = Paziente, "MEDICO" = Medico
+    userRole: String? = null // "PAZIENTE" = Paziente, "MEDICO" = Medico
 ) {
-    // Se l'utente è un guest (userRole == null), non mostriamo nulla
-    if (userRole == null) return
-
     var expanded by remember { mutableStateOf(false) }
 
     // Logica di visibilità basata sul ruolo

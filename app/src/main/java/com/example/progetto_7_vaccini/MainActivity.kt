@@ -40,7 +40,7 @@ fun Sesso.toSex(): Sex = when (this) {
 }
 
 enum class AppScreen {
-    LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, MEDICO_AREA
+    LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, LOGGED_USER, MODIFY_DATA
 }
 
 class MainActivity : ComponentActivity() {
@@ -73,12 +73,24 @@ class MainActivity : ComponentActivity() {
                 var patientConditions by rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
                 var patientHistory by rememberSaveable { mutableStateOf(setOf<String>()) }
                 var isEditingPatient by rememberSaveable { mutableStateOf(false) }
+                var doctorPatients by rememberSaveable { mutableStateOf<List<com.example.progetto_7_vaccini.data.database.entities.Paziente>>(emptyList()) }
 
                 @OptIn(ExperimentalMaterial3Api::class)
                 when (currentScreen) {
                     AppScreen.LANDING -> {
                         LandingScreen(
                             onGuestClick = { 
+                                // Reset dei dati paziente per l'ospite
+                                patientName = ""
+                                patientSurname = ""
+                                patientBirthDate = ""
+                                patientAge = null
+                                patientSex = null
+                                patientBiologic = null
+                                patientConditions = emptySet()
+                                patientHistory = emptySet()
+                                results = null
+                                
                                 userRole = null
                                 isEditingPatient = false
                                 currentScreen = AppScreen.FORM
@@ -97,9 +109,17 @@ class MainActivity : ComponentActivity() {
                                 userRole = role
                                 
                                 if (role == "MEDICO") {
-                                    currentScreen = AppScreen.MEDICO_AREA
-                                } else {
-                                    // Se è un paziente, carichiamo i dati e andiamo ai risultati
+                                    coroutineScope.launch {
+                                        val utente = database.utenteDao().getUtenteByEmail(email)
+                                        val medico = utente?.let { database.medicoDao().getMedicoByUtente(it.idUtente) }
+                                        if (medico != null) {
+                                            patientSurname = medico.cognome
+                                            doctorPatients = database.pazienteDao().getPazientiByMedico(medico.idMedico)
+                                            currentScreen = AppScreen.LOGGED_USER
+                                        }
+                                    }
+                                } else if (role == "PAZIENTE") {
+                                    // Pre-carichiamo i dati del paziente per i risultati
                                     coroutineScope.launch {
                                         val utente = database.utenteDao().getUtenteByEmail(email)
                                         val paziente = utente?.let { database.pazienteDao().getPazienteByUtente(it.idUtente) }
@@ -111,14 +131,11 @@ class MainActivity : ComponentActivity() {
                                             patientAge = com.example.progetto_7_vaccini.data.DateUtils.calculateAge(paziente.dataNascita)
                                             patientSex = paziente.sesso.toSex()
                                             
-                                            // Recupero la cura dal DB per mappare l'enum BiologicType
                                             val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
                                             patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
                                             
-                                            // Calcolo le raccomandazioni (vuote per ora le condizioni/storia, andrebbero caricate anche quelle se presenti)
                                             results = getVaccineRecommendations(patientSex!!, patientBiologic!!, patientAge, emptySet(), emptySet())
-                                            
-                                            currentScreen = AppScreen.RESULTS
+                                            currentScreen = AppScreen.LOGGED_USER
                                         }
                                     }
                                 }
@@ -139,33 +156,14 @@ class MainActivity : ComponentActivity() {
 
                     AppScreen.FORM -> {
                         FormScreen(
-                            initialName = if (isEditingPatient) patientName else "",
-                            initialSurname = if (isEditingPatient) patientSurname else "",
-                            initialBirthDate = if (isEditingPatient) patientBirthDate else "",
-                            initialSex = if (isEditingPatient) patientSex else null,
-                            initialBiologic = if (isEditingPatient) patientBiologic else null,
-                            initialConditions = if (isEditingPatient) patientConditions else emptySet(),
-                            initialHistory = if (isEditingPatient) patientHistory else emptySet(),
-                            initialEmail = currentUserEmail ?: "",
-                            isEditing = isEditingPatient,
-                            onBack = { 
-                                if (isEditingPatient) currentScreen = AppScreen.RESULTS
-                                else currentScreen = AppScreen.LANDING 
-                            },
-                            onEmailUpdate = { nuovaEmail, callback ->
-                                coroutineScope.launch {
-                                    val utenteEsistente = database.utenteDao().getUtenteByEmail(nuovaEmail)
-                                    if (utenteEsistente == null || nuovaEmail == currentUserEmail) {
-                                        currentUserEmail?.let { vecchiaEmail ->
-                                            database.utenteDao().aggiornaEmailByEmail(vecchiaEmail, nuovaEmail)
-                                            currentUserEmail = nuovaEmail
-                                        }
-                                        callback(null) // Successo
-                                    } else {
-                                        callback("Email non valida")
-                                    }
-                                }
-                            },
+                            initialName = patientName,
+                            initialSurname = patientSurname,
+                            initialBirthDate = patientBirthDate,
+                            initialSex = patientSex,
+                            initialBiologic = patientBiologic,
+                            initialConditions = patientConditions,
+                            initialHistory = patientHistory,
+                            onBack = { currentScreen = AppScreen.LANDING },
                             onSubmit = { name, surname, birthDate, sex, biologic, conditions, history ->
                                 patientName = name
                                 patientSurname = surname
@@ -191,25 +189,100 @@ class MainActivity : ComponentActivity() {
                             biologic       = patientBiologic!!,
                             recommendations = results!!,
                             onBack = { 
-                                isEditingPatient = true
-                                currentScreen = AppScreen.FORM 
+                                if (userRole == "MEDICO") {
+                                    currentScreen = AppScreen.LOGGED_USER
+                                } else {
+                                    // Guest torna al form
+                                    currentScreen = AppScreen.FORM
+                                }
+                            }
+                        )
+                    }
+
+                    AppScreen.MODIFY_DATA -> {
+                        ModifyDataScreen(
+                            initialName = patientName,
+                            initialSurname = patientSurname,
+                            initialBirthDate = patientBirthDate,
+                            initialSex = patientSex,
+                            initialBiologic = patientBiologic,
+                            initialConditions = patientConditions,
+                            initialHistory = patientHistory,
+                            initialEmail = currentUserEmail ?: "",
+                            onBack = { currentScreen = AppScreen.LOGGED_USER },
+                            onEmailUpdate = { nuovaEmail, callback ->
+                                coroutineScope.launch {
+                                    val utenteEsistente = database.utenteDao().getUtenteByEmail(nuovaEmail)
+                                    if (utenteEsistente == null || nuovaEmail == currentUserEmail) {
+                                        currentUserEmail?.let { vecchiaEmail ->
+                                            database.utenteDao().aggiornaEmailByEmail(vecchiaEmail, nuovaEmail)
+                                            currentUserEmail = nuovaEmail
+                                        }
+                                        callback(null)
+                                    } else {
+                                        callback("Email non valida")
+                                    }
+                                }
                             },
-                            onModificaDati = { 
-                                isEditingPatient = true
-                                currentScreen = AppScreen.FORM 
-                            },
+                            onConfirm = { name, surname, birthDate, sex, biologic, conditions, history ->
+                                patientName = name
+                                patientSurname = surname
+                                patientBirthDate = birthDate
+                                val age = com.example.progetto_7_vaccini.data.DateUtils.calculateAge(birthDate)
+                                patientAge = age
+                                patientSex = sex
+                                patientBiologic = biologic
+                                patientConditions = conditions
+                                patientHistory = history
+                                results = getVaccineRecommendations(sex, biologic, age, conditions, history)
+                                
+                                // Dopo la modifica, ricalcoliamo e torniamo alla Home loggata (che mostra i risultati aggiornati)
+                                currentScreen = AppScreen.LOGGED_USER
+                            }
+                        )
+                    }
+
+                    AppScreen.LOGGED_USER -> {
+                        LoggedUserScreen(
+                            userRole = userRole,
+                            userEmail = currentUserEmail,
+                            patientName = patientName,
+                            patientSurname = patientSurname,
+                            patientAge = patientAge,
+                            patientSex = patientSex,
+                            patientBiologic = patientBiologic,
+                            recommendations = results,
+                            doctorPatients = doctorPatients,
+                            onLogout = { currentScreen = AppScreen.LANDING },
+                            onModificaDati = { currentScreen = AppScreen.MODIFY_DATA },
                             onChangePassword = { 
                                 coroutineScope.launch {
                                     currentUserEmail?.let { email ->
                                         val utente = database.utenteDao().getUtenteByEmail(email)
                                         actualPassword = utente?.password ?: ""
                                     }
-                                    previousScreen = AppScreen.RESULTS
+                                    previousScreen = AppScreen.LOGGED_USER
                                     currentScreen = AppScreen.NEW_PASSWORD 
                                 }
                             },
-                            onLogout = { currentScreen = AppScreen.LANDING },
-                            userRole = userRole
+                            onPatientClick = { paziente ->
+                                coroutineScope.launch {
+                                    patientName = paziente.nome
+                                    patientSurname = paziente.cognome
+                                    patientBirthDate = paziente.dataNascita
+                                    patientAge = com.example.progetto_7_vaccini.data.DateUtils.calculateAge(paziente.dataNascita)
+                                    patientSex = paziente.sesso.toSex()
+                                    
+                                    val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
+                                    patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
+                                    
+                                    // Qui andrebbero caricate anche le condizioni e la storia se salvate nel DB
+                                    results = getVaccineRecommendations(patientSex!!, patientBiologic!!, patientAge, emptySet(), emptySet())
+                                    
+                                    previousScreen = AppScreen.LOGGED_USER
+                                    currentScreen = AppScreen.RESULTS
+                                }
+                            }
                         )
                     }
 
@@ -226,26 +299,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         )
-                    }
-
-                    AppScreen.MEDICO_AREA -> {
-                        // Schermata placeholder per l'area medico (lista pazienti)
-                        Scaffold(
-                            topBar = {
-                                CenterAlignedTopAppBar(
-                                    title = { Text("Area Medico") },
-                                    actions = {
-                                        IconButton(onClick = { currentScreen = AppScreen.LANDING }) {
-                                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
-                                        }
-                                    }
-                                )
-                            }
-                        ) { padding ->
-                            Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                                Text("Benvenuto Dottore!\nLa lista pazienti sarà disponibile a breve.", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                            }
-                        }
                     }
                 }
             }

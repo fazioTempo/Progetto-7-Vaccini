@@ -47,19 +47,8 @@ fun ResultsScreen(
     sex            : Sex,
     biologic       : BiologicType,
     recommendations: List<VaccineRec>,
-    onBack         : () -> Unit,
-    onModificaDati : () -> Unit,
-    onChangePassword: () -> Unit,
-    onLogout       : () -> Unit,
-    userRole       : String? = null // Riceve il ruolo dell'utente loggato
+    onBack         : () -> Unit
 ) {
-    val recommended    = recommendations.filter { it.status == VaccineStatus.RECOMMENDED }
-    val contraindicated = recommendations.filter { it.status == VaccineStatus.CONTRAINDICATED }
-    val alreadyDone    = recommendations.filter { it.status == VaccineStatus.ALREADY_DONE }
-    
-    val essential      = recommended.filter { it.priority == VaccinePriority.ESSENTIAL }
-    val routine        = recommended.filter { it.priority != VaccinePriority.ESSENTIAL }
-
     Scaffold(
         topBar = {
             Column(
@@ -86,116 +75,135 @@ fun ResultsScreen(
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
-                    UserDropdownMenu(
-                        onModifica = onModificaDati,
-                        onChangePassword = onChangePassword,
-                        onLogout = onLogout,
-                        modifier = Modifier.size(40.dp),
-                        userRole = userRole
-                    )
                 }
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Patient summary card
+        ResultsContent(
+            patientName = patientName,
+            patientSurname = patientSurname,
+            patientAge = patientAge,
+            sex = sex,
+            biologic = biologic,
+            recommendations = recommendations,
+            modifier = Modifier.padding(padding)
+        )
+    }
+}
+
+@Composable
+fun ResultsContent(
+    patientName: String,
+    patientSurname: String,
+    patientAge: Int?,
+    sex: Sex,
+    biologic: BiologicType,
+    recommendations: List<VaccineRec>,
+    modifier: Modifier = Modifier
+) {
+    val recommended    = recommendations.filter { it.status == VaccineStatus.RECOMMENDED }
+    val contraindicated = recommendations.filter { it.status == VaccineStatus.CONTRAINDICATED }
+    val alreadyDone    = recommendations.filter { it.status == VaccineStatus.ALREADY_DONE }
+    
+    val essential      = recommended.filter { it.priority == VaccinePriority.ESSENTIAL }
+    val routine        = recommended.filter { it.priority != VaccinePriority.ESSENTIAL }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Patient summary card
+        item {
+            PatientSummaryCard(
+                name     = patientName,
+                surname  = patientSurname,
+                age      = patientAge,
+                sex      = sex,
+                biologic = biologic
+            )
+        }
+
+        // Disclaimer
+        item { DisclaimerCard() }
+
+        // ── Recommended ────────────────────────────────────────────────────
+        item {
+            SectionHeader(
+                title     = "Vaccini raccomandati",
+                count     = recommended.size,
+                isPositive = true
+            )
+        }
+
+        if (essential.isNotEmpty()) {
             item {
-                PatientSummaryCard(
-                    name     = patientName,
-                    surname  = patientSurname,
-                    age      = patientAge,
-                    sex      = sex,
-                    biologic = biologic
+                Text(
+                    text     = "PRIORITARI / ESSENZIALI",
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = Amber700,
+                    modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
                 )
             }
+            items(essential) { vaccine ->
+                VaccineCard(vaccine = vaccine)
+            }
+        }
 
-            // Disclaimer
-            item { DisclaimerCard() }
-
-            // ── Recommended ────────────────────────────────────────────────────
+        if (routine.isNotEmpty()) {
             item {
-                SectionHeader(
-                    title     = "Vaccini raccomandati",
-                    count     = recommended.size,
-                    isPositive = true
+                Text(
+                    text     = "DI ROUTINE / CONDIZIONALI",
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = Slate400,
+                    modifier = Modifier.padding(start = 2.dp, top = 8.dp, bottom = 4.dp)
                 )
             }
-
-            if (essential.isNotEmpty()) {
-                item {
-                    Text(
-                        text     = "PRIORITARI / ESSENZIALI",
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = Amber700,
-                        modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
-                    )
-                }
-                items(essential) { vaccine ->
-                    VaccineCard(vaccine = vaccine)
-                }
+            items(routine) { vaccine ->
+                VaccineCard(vaccine = vaccine)
             }
+        }
 
-            if (routine.isNotEmpty()) {
-                item {
-                    Text(
-                        text     = "DI ROUTINE / CONDIZIONALI",
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = Slate400,
-                        modifier = Modifier.padding(start = 2.dp, top = 8.dp, bottom = 4.dp)
-                    )
-                }
-                items(routine) { vaccine ->
-                    VaccineCard(vaccine = vaccine)
-                }
-            }
+        // ── Contraindicated ────────────────────────────────────────────────
+        item {
+            Spacer(Modifier.height(4.dp))
+            SectionHeader(
+                title     = "Vaccini controindicati",
+                count     = contraindicated.size,
+                isPositive = false
+            )
+        }
 
-            // ── Contraindicated ────────────────────────────────────────────────
+        items(contraindicated) { vaccine ->
+            VaccineCard(vaccine = vaccine)
+        }
+
+        // ── Already Done ──────────────────────────────────────────────────
+        if (alreadyDone.isNotEmpty()) {
             item {
                 Spacer(Modifier.height(4.dp))
                 SectionHeader(
-                    title     = "Vaccini controindicati",
-                    count     = contraindicated.size,
-                    isPositive = false
-                )
+                    title     = "Vaccini completati",
+                    count     = alreadyDone.size,
+                    isPositive = true // Usiamo verde per indicare completato
+                    )
             }
-
-            items(contraindicated) { vaccine ->
+            items(alreadyDone) { vaccine ->
                 VaccineCard(vaccine = vaccine)
             }
+        }
 
-            // ── Already Done ──────────────────────────────────────────────────
-            if (alreadyDone.isNotEmpty()) {
-                item {
-                    Spacer(Modifier.height(4.dp))
-                    SectionHeader(
-                        title     = "Vaccini completati",
-                        count     = alreadyDone.size,
-                        isPositive = true // Usiamo verde per indicare completato
-                    )
-                }
-                items(alreadyDone) { vaccine ->
-                    VaccineCard(vaccine = vaccine)
-                }
-            }
-
-            // Footer
-            item {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text     = "Basato sulle linee guida ACIP, EULAR, ECDC e SEPAR per la vaccinazione nei pazienti immunocompromessi.",
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = Slate400,
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-                Spacer(Modifier.height(32.dp))
-            }
+        // Footer
+        item {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text     = "Basato sulle linee guida ACIP, EULAR, ECDC e SEPAR per la vaccinazione nei pazienti immunocompromessi.",
+                style    = MaterialTheme.typography.bodySmall,
+                color    = Slate400,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            Spacer(Modifier.height(32.dp))
         }
     }
 }

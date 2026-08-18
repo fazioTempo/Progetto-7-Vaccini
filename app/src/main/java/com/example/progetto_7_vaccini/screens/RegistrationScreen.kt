@@ -286,23 +286,3 @@ fun RegistrationScreen(
         }
     }
 }
-
-// ── Helper (copiato da FormScreen per ora o reso public lì) ───────────────────
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = Slate600,
-        modifier = Modifier.padding(bottom = 2.dp)
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun outlinedFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = Teal700,
-    unfocusedBorderColor = Slate200,
-    focusedLabelColor = Teal700,
-    cursorColor = Teal700
-)
