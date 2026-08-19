@@ -38,6 +38,8 @@ fun FormScreen(
     initialBiologic: BiologicType? = null,
     initialConditions: Set<MedicalCondition> = emptySet(),
     initialHistory: Set<String> = emptySet(),
+    biologicOptions: List<BiologicType> = BiologicType.entries,
+    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
     onBack: () -> Unit,
     onSubmit: (nome: String, cognome: String, birthDate: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
 ) {
@@ -59,6 +61,8 @@ fun FormScreen(
 
     Scaffold(
         topBar = {
+// ...
+// (omitted for brevity in thinking, but I'll provide full block)
             Column(
                 modifier = Modifier.background(Teal900)
                     .fillMaxWidth()
@@ -122,7 +126,9 @@ fun FormScreen(
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
                 onHistoryChange = { history.value = it },
-                showErrors = showErrors
+                showErrors = showErrors,
+                biologicOptions = biologicOptions,
+                conditionOptions = conditionOptions
             )
 
             // ── Submit ────────────────────────────────────────────────────────
@@ -181,7 +187,9 @@ fun VaccineFormContent(
     onConditionsChange: (Set<MedicalCondition>) -> Unit,
     history: Set<String>,
     onHistoryChange: (Set<String>) -> Unit,
-    showErrors: Boolean = false
+    showErrors: Boolean = false,
+    biologicOptions: List<BiologicType> = BiologicType.entries,
+    conditionOptions: List<MedicalCondition> = MedicalCondition.entries
 ) {
     var sexExpanded      by remember { mutableStateOf(false) }
     var biologicExpanded by remember { mutableStateOf(false) }
@@ -340,7 +348,7 @@ fun VaccineFormContent(
                 onDismissRequest = { biologicExpanded = false },
                 modifier        = Modifier.heightIn(max = 320.dp)
             ) {
-                BiologicType.entries.forEach { option ->
+                biologicOptions.forEach { option ->
                     DropdownMenuItem(
                         text    = { Text(option.label, style = MaterialTheme.typography.bodySmall) },
                         onClick = {
@@ -355,7 +363,7 @@ fun VaccineFormContent(
         // ── Medical conditions ────────────────────────────────────────────
         SectionLabel("Condizioni mediche rilevanti  •  seleziona tutte le pertinenti")
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            MedicalCondition.entries.forEach { condition ->
+            conditionOptions.forEach { condition ->
                 val checked = conditions.contains(condition)
                 ConditionCheckItem(
                     label   = condition.label,

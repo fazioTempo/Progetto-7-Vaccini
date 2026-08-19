@@ -8,6 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import com.example.progetto_7_vaccini.data.BiologicType
 import com.example.progetto_7_vaccini.data.MedicalCondition
 import com.example.progetto_7_vaccini.data.Sex
@@ -28,16 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.Icons
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
-
-fun Sex.toSesso(): Sesso = when (this) {
-    Sex.MALE -> Sesso.MASCHIO
-    Sex.FEMALE -> Sesso.FEMMINA
-}
-
-fun Sesso.toSex(): Sex = when (this) {
-    Sesso.MASCHIO -> Sex.MALE
-    Sesso.FEMMINA -> Sex.FEMALE
-}
+import com.example.progetto_7_vaccini.data.database.entities.toSesso
+import com.example.progetto_7_vaccini.data.database.entities.toSex
 
 enum class AppScreen {
     LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, LOGGED_USER, MODIFY_DATA
@@ -59,6 +53,27 @@ class MainActivity : ComponentActivity() {
                 var userRole by rememberSaveable { mutableStateOf<String?>(null) } // "PAZIENTE", "MEDICO" o null (Ospite)
                 var currentUserEmail by rememberSaveable { mutableStateOf<String?>(null) }
                 var actualPassword by rememberSaveable { mutableStateOf("") }
+                var currentPatientId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+                // Options from DB
+                var dbBiologicOptions by remember { mutableStateOf<List<BiologicType>>(BiologicType.entries) }
+                var dbConditionOptions by remember { mutableStateOf<List<MedicalCondition>>(MedicalCondition.entries) }
+
+                LaunchedEffect(Unit) {
+                    val cure = database.curaBiologicaDao().getTutteLeCure()
+                    val cond = database.condizioneClinicaDao().getTutteLeCondizioni()
+                    
+                    if (cure.isNotEmpty()) {
+                        dbBiologicOptions = BiologicType.entries.filter { type ->
+                            cure.any { it.nome == type.label }
+                        }
+                    }
+                    if (cond.isNotEmpty()) {
+                        dbConditionOptions = MedicalCondition.entries.filter { enumCond ->
+                            cond.any { it.nome == enumCond.label }
+                        }
+                    }
+                }
 
                 val coroutineScope = rememberCoroutineScope()
                 
@@ -125,6 +140,7 @@ class MainActivity : ComponentActivity() {
                                         val paziente = utente?.let { database.pazienteDao().getPazienteByUtente(it.idUtente) }
                                         
                                         if (paziente != null) {
+                                            currentPatientId = paziente.idPaziente
                                             patientName = paziente.nome
                                             patientSurname = paziente.cognome
                                             patientBirthDate = paziente.dataNascita
@@ -134,7 +150,23 @@ class MainActivity : ComponentActivity() {
                                             val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
                                             patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
                                             
-                                            results = getVaccineRecommendations(patientSex!!, patientBiologic!!, patientAge, emptySet(), emptySet())
+                                            // Caricamento condizioni dal DB
+                                            val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
+                                            val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
+                                            patientConditions = condPaziente.mapNotNull { cp ->
+                                                val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
+                                                MedicalCondition.entries.find { it.label == nomeCond }
+                                            }.toSet()
+
+                                            // Caricamento storia vaccinale dal DB
+                                            val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(paziente.idPaziente)
+                                            val tuttiVaccDb = database.vaccinoDao().getTuttiVaccini()
+                                            patientHistory = vaccPaziente.mapNotNull { vp ->
+                                                tuttiVaccDb.find { it.idVaccino == vp.idVaccino }?.nome
+                                            }.toSet()
+
+                                            results = com.example.progetto_7_vaccini.data.database.MotoreDecisionale()
+                                                .calcolaRaccomandazioniPerPaziente(database, paziente.idPaziente)
                                             currentScreen = AppScreen.LOGGED_USER
                                         }
                                     }
@@ -146,6 +178,8 @@ class MainActivity : ComponentActivity() {
                     AppScreen.REGISTER -> {
                         RegistrationScreen(
                             database = database,
+                            biologicOptions = dbBiologicOptions,
+                            conditionOptions = dbConditionOptions,
                             onBack = { currentScreen = AppScreen.LANDING },
                             onRegisterSuccess = {
                                 userRole = "PAZIENTE"
@@ -163,6 +197,8 @@ class MainActivity : ComponentActivity() {
                             initialBiologic = patientBiologic,
                             initialConditions = patientConditions,
                             initialHistory = patientHistory,
+                            biologicOptions = dbBiologicOptions,
+                            conditionOptions = dbConditionOptions,
                             onBack = { currentScreen = AppScreen.LANDING },
                             onSubmit = { name, surname, birthDate, sex, biologic, conditions, history ->
                                 patientName = name
@@ -209,6 +245,8 @@ class MainActivity : ComponentActivity() {
                             initialConditions = patientConditions,
                             initialHistory = patientHistory,
                             initialEmail = currentUserEmail ?: "",
+                            biologicOptions = dbBiologicOptions,
+                            conditionOptions = dbConditionOptions,
                             onBack = { currentScreen = AppScreen.LOGGED_USER },
                             onEmailUpdate = { nuovaEmail, callback ->
                                 coroutineScope.launch {
@@ -236,7 +274,59 @@ class MainActivity : ComponentActivity() {
                                 patientHistory = history
                                 results = getVaccineRecommendations(sex, biologic, age, conditions, history)
                                 
-                                // Dopo la modifica, ricalcoliamo e torniamo alla Home loggata (che mostra i risultati aggiornati)
+                                // SALVATAGGIO NEL DB
+                                coroutineScope.launch {
+                                    currentPatientId?.let { id ->
+                                        // 1. Aggiorna dati base e cura
+                                        val tutteLeCure = database.curaBiologicaDao().getTutteLeCure()
+                                        val idCuraSelezionata = tutteLeCure.find { it.nome == biologic.label }?.idCura ?: 1L
+                                        
+                                        val p = database.pazienteDao().getPaziente(id)
+                                        if (p != null) {
+                                            database.pazienteDao().inserisciPaziente(
+                                                p.copy(
+                                                    nome = name,
+                                                    cognome = surname,
+                                                    dataNascita = birthDate,
+                                                    sesso = sex.toSesso(),
+                                                    idCura = idCuraSelezionata
+                                                )
+                                            )
+                                        }
+
+                                        // 2. Aggiorna Condizioni (Delete and Insert)
+                                        database.pazienteCondizioneDao().cancellaTutteCondizioniPerPaziente(id)
+                                        val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
+                                        conditions.forEach { condEnum ->
+                                            tutteCondDb.find { it.nome == condEnum.label }?.let { condDb ->
+                                                database.pazienteCondizioneDao().inserisciPazienteCondizione(
+                                                    com.example.progetto_7_vaccini.data.database.entities.PazienteCondizione(idPaziente = id, idCondizione = condDb.idCondizione)
+                                                )
+                                            }
+                                        }
+
+                                        // 3. Aggiorna Storia Vaccinale (Delete and Insert)
+                                        database.vaccinazioneDao().cancellaTutteVaccinazioniPerPaziente(id)
+                                        val tuttiVaccini = database.vaccinoDao().getTuttiVaccini()
+                                        history.forEach { vaccinoNome ->
+                                            tuttiVaccini.find { it.nome == vaccinoNome }?.let { vaccinoDb ->
+                                                database.vaccinazioneDao().inserisciVaccinazione(
+                                                    com.example.progetto_7_vaccini.data.database.entities.Vaccinazione(
+                                                        idPaziente = id,
+                                                        idVaccino = vaccinoDb.idVaccino,
+                                                        dataSomministrazione = "01/01/2024",
+                                                        numeroDose = 1
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        // 4. Ricalcola tutto dal DB
+                                        results = com.example.progetto_7_vaccini.data.database.MotoreDecisionale()
+                                            .calcolaRaccomandazioniPerPaziente(database, id)
+                                    }
+                                }
+
                                 currentScreen = AppScreen.LOGGED_USER
                             }
                         )
@@ -267,6 +357,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onPatientClick = { paziente ->
                                 coroutineScope.launch {
+                                    currentPatientId = paziente.idPaziente
                                     patientName = paziente.nome
                                     patientSurname = paziente.cognome
                                     patientBirthDate = paziente.dataNascita
@@ -276,8 +367,22 @@ class MainActivity : ComponentActivity() {
                                     val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
                                     patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
                                     
-                                    // Qui andrebbero caricate anche le condizioni e la storia se salvate nel DB
-                                    results = getVaccineRecommendations(patientSex!!, patientBiologic!!, patientAge, emptySet(), emptySet())
+                                    // Caricamento condizioni e storia
+                                    val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
+                                    val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
+                                    patientConditions = condPaziente.mapNotNull { cp ->
+                                        val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
+                                        MedicalCondition.entries.find { it.label == nomeCond }
+                                    }.toSet()
+
+                                    val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(paziente.idPaziente)
+                                    val tuttiVaccDb = database.vaccinoDao().getTuttiVaccini()
+                                    patientHistory = vaccPaziente.mapNotNull { vp ->
+                                        tuttiVaccDb.find { it.idVaccino == vp.idVaccino }?.nome
+                                    }.toSet()
+
+                                    results = com.example.progetto_7_vaccini.data.database.MotoreDecisionale()
+                                        .calcolaRaccomandazioniPerPaziente(database, paziente.idPaziente)
                                     
                                     previousScreen = AppScreen.LOGGED_USER
                                     currentScreen = AppScreen.RESULTS

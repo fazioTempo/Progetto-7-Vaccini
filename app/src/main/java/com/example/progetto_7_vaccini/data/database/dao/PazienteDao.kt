@@ -2,14 +2,15 @@ package com.example.progetto_7_vaccini.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 
 @Dao
 interface PazienteDao {
 
-    @Insert
-    suspend fun inserisciPaziente(paziente: Paziente)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun inserisciPaziente(paziente: Paziente): Long
 
     @Query("SELECT * FROM paziente WHERE idPaziente = :id")
     suspend fun getPaziente(id: Long): Paziente?

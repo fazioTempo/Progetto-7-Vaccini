@@ -20,4 +20,7 @@ interface VaccinazioneDao {
     @Query("SELECT * FROM vaccinazione WHERE idPaziente = :idPaziente")
     suspend fun getVaccinazioniByPaziente(idPaziente: Long): List<Vaccinazione>
 
+    @Query("DELETE FROM vaccinazione WHERE idPaziente = :idPaziente")
+    suspend fun cancellaTutteVaccinazioniPerPaziente(idPaziente: Long)
+
 }

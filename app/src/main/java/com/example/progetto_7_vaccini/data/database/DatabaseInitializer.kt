@@ -142,34 +142,13 @@ object DatabaseInitializer {
     }
 
     suspend fun  inserisciCondizioniCliniche(condizioneClinicaDao: CondizioneClinicaDao){
-        val condizioniControindicazione = listOf(
-            CondizioneClinica(1, "GRAVIDANZA", "CONTROINDICATO"),
-            CondizioneClinica(2, "IMMUNOSOPPRESSIONE", "CONTROINDICATO"),
-            CondizioneClinica(3, "HIV_CD4_BASSO", "CONTROINDICATO"),
-            CondizioneClinica(4, "TRAPIANTO", "CONTROINDICATO"),
-            CondizioneClinica(5, "TERAPIA_ONCOLOGICA", "CONTROINDICATO")
-        )
-        val condizioniValutare = listOf(
-            CondizioneClinica(10, "CARDIOPATIA_CRONICA", "VALUTARE"),
-            CondizioneClinica(11, "BPCO_ASMA_GRAVE", "VALUTARE"),
-            CondizioneClinica(12, "MALATTIA_EPATICA", "VALUTARE"),
-            CondizioneClinica(13, "MALATTIA_RENALE", "VALUTARE"),
-            CondizioneClinica(14, "DIABETE", "VALUTARE"),
-            CondizioneClinica(15, "OBESITA_SEVERA", "VALUTARE"),
-            CondizioneClinica(16, "ETA_AVANZATA", "VALUTARE")
-        )
-        val condizioniConsentito = listOf(
-            CondizioneClinica(20, "FUMATORE", "CONSENTITO"),        // pneumococco
-            CondizioneClinica(21, "ASPLENIA", "CONSENTITO"),        // meningococco + pneumococco
-            CondizioneClinica(22, "DIABETE_RACCOMANDAZIONE", "CONSENTITO"), // epatite B
-            CondizioneClinica(23, "GRAVIDANZA_TDAP", "CONSENTITO"), // Tdap
-            CondizioneClinica(24, "VIAGGI_INTERNAZIONALI", "CONSENTITO")
-        )
-        val condizioni = condizioniControindicazione +
-                condizioniValutare +
-                condizioniConsentito
-
-        condizioni.forEach { condizioneClinicaDao.inserisciCondizione(it) }
-
+        com.example.progetto_7_vaccini.data.MedicalCondition.entries.forEach { condition ->
+            condizioneClinicaDao.inserisciCondizione(
+                CondizioneClinica(
+                    nome = condition.label,
+                    raccomandazione = condition.defaultRec
+                )
+            )
+        }
     }
 }

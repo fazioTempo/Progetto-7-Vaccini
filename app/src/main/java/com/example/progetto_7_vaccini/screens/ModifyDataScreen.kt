@@ -30,6 +30,8 @@ fun ModifyDataScreen(
     initialConditions: Set<MedicalCondition>,
     initialHistory: Set<String>,
     initialEmail: String,
+    biologicOptions: List<BiologicType> = BiologicType.entries,
+    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
     onBack: () -> Unit,
     onEmailUpdate: (String, (String?) -> Unit) -> Unit,
     onConfirm: (nome: String, cognome: String, birthDate: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
@@ -165,7 +167,9 @@ fun ModifyDataScreen(
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
                 onHistoryChange = { history.value = it },
-                showErrors = showErrors
+                showErrors = showErrors,
+                biologicOptions = biologicOptions,
+                conditionOptions = conditionOptions
             )
 
             // ── Conferma Dati ──────────────────────────────────────────────────

@@ -25,6 +25,9 @@ import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Utente
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
+import com.example.progetto_7_vaccini.data.database.entities.PazienteCondizione
+import com.example.progetto_7_vaccini.data.database.entities.Vaccinazione
+import com.example.progetto_7_vaccini.data.database.entities.EsitoVaccino
 import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.ui.theme.*
@@ -35,6 +38,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun RegistrationScreen(
     database: AppDatabase,
+    biologicOptions: List<BiologicType> = BiologicType.entries,
+    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
     onBack: () -> Unit,
     onRegisterSuccess: (String) -> Unit
 ) {
@@ -228,7 +233,9 @@ fun RegistrationScreen(
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
                 onHistoryChange = { history.value = it },
-                showErrors = showErrors
+                showErrors = showErrors,
+                biologicOptions = biologicOptions,
+                conditionOptions = conditionOptions
             )
 
             // ── Register Button ──────────────────────────────────────────────
@@ -251,7 +258,7 @@ fun RegistrationScreen(
                             val idCuraSelezionata = tutteLeCure.find { it.nome == biologic!!.label }?.idCura ?: 1L
                             
                             // 3. Salvataggio Paziente
-                            database.pazienteDao().inserisciPaziente(
+                            val idPaziente = database.pazienteDao().inserisciPaziente(
                                 Paziente(
                                     idUtente = idUtente,
                                     idMedico = selectedDoctor?.idMedico ?: 1L, 
@@ -262,6 +269,31 @@ fun RegistrationScreen(
                                     sesso = sex!!.toSesso()
                                 )
                             )
+
+                            // 4. Salvataggio Condizioni Cliniche
+                            val tutteCondizioni = database.condizioneClinicaDao().getTutteLeCondizioni()
+                            conditions.value.forEach { condEnum ->
+                                tutteCondizioni.find { it.nome == condEnum.label }?.let { condDb ->
+                                    database.pazienteCondizioneDao().inserisciPazienteCondizione(
+                                        PazienteCondizione(idPaziente = idPaziente, idCondizione = condDb.idCondizione)
+                                    )
+                                }
+                            }
+
+                            // 5. Salvataggio Storia Vaccinale
+                            val tuttiVaccini = database.vaccinoDao().getTuttiVaccini()
+                            history.value.forEach { vaccinoNome ->
+                                tuttiVaccini.find { it.nome == vaccinoNome }?.let { vaccinoDb ->
+                                    database.vaccinazioneDao().inserisciVaccinazione(
+                                        Vaccinazione(
+                                            idPaziente = idPaziente,
+                                            idVaccino = vaccinoDb.idVaccino,
+                                            dataSomministrazione = "01/01/2024", // Data fittizia se non inserita
+                                            numeroDose = 1
+                                        )
+                                    )
+                                }
+                            }
                             
                             onRegisterSuccess(email)
                         }

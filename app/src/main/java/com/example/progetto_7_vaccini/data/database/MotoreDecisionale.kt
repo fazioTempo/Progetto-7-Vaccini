@@ -11,77 +11,72 @@ import com.example.progetto_7_vaccini.data.database.entities.RaccomandazioneVacc
 import com.example.progetto_7_vaccini.data.database.dao.VaccinazioneDao
 import com.example.progetto_7_vaccini.data.database.entities.EsitoVaccino
 
+import com.example.progetto_7_vaccini.data.*
+import com.example.progetto_7_vaccini.data.BiologicType as BiologicTypeEnum
+import com.example.progetto_7_vaccini.data.database.entities.*
+
 class MotoreDecisionale {
 
     suspend fun calcolaRaccomandazioniPerPaziente(
         database: AppDatabase,
-        idPaziente: Long,
-        biologico: CuraBiologica,
-        condizioni: List<CondizioneClinica>
-    ) {
-        val vaccinoDao = database.vaccinoDao()
+        idPaziente: Long
+    ): List<VaccineRec> {
+        val paziente = database.pazienteDao().getPaziente(idPaziente) ?: return emptyList()
+        
+        // 1. Recupero Cura Biologica
+        val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
+        val biologic = BiologicTypeEnum.entries.find { it.label == curaDb?.nome } ?: BiologicTypeEnum.TNF_INHIBITOR
+        
+        // 2. Recupero Condizioni Cliniche
+        val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(idPaziente)
+        val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
+        val conditions = condPaziente.mapNotNull { cp ->
+            val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
+            MedicalCondition.entries.find { it.label == nomeCond }
+        }.toSet()
+        
+        // 3. Recupero Storia Vaccinale
+        val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(idPaziente)
+        val tuttiVaccDb = database.vaccinoDao().getTuttiVaccini()
+        val history = vaccPaziente.mapNotNull { vp ->
+            tuttiVaccDb.find { it.idVaccino == vp.idVaccino }?.nome
+        }.toSet()
+        
+        val age = DateUtils.calculateAge(paziente.dataNascita)
+        val sex = paziente.sesso.toSex()
+        
+        // 4. Calcolo tramite le regole esperte
+        val raccomandazioni = getVaccineRecommendations(
+            sex = sex,
+            biologic = biologic,
+            age = age,
+            conditions = conditions,
+            completedVaccines = history
+        )
+        
+        // 5. Salvataggio Esiti nel DB (opzionale, ma utile per persistenza)
         val raccomandazioneDao = database.raccomandazioneVaccinoDao()
-
-        val tuttiVaccini = vaccinoDao.getTuttiVaccini()
-
-        tuttiVaccini.forEach { vaccino ->
-
-            val esito = valutaVaccinoPerPaziente(
-                vaccino = vaccino,
-                condizioni = condizioni
-            )
-
-            val raccomandazione = RaccomandazioneVaccino(
-                idPaziente = idPaziente,
-                idVaccino = vaccino.idVaccino,
-                esito = esito
-            )
-
-            raccomandazioneDao.inserisciRaccomandazione(raccomandazione)
+        raccomandazioni.forEach { rec ->
+            val idVaccino = tuttiVaccDb.find { it.nome == rec.name }?.idVaccino ?: 0L
+            if (idVaccino != 0L) {
+                raccomandazioneDao.inserisciRaccomandazione(
+                    RaccomandazioneVaccino(
+                        idPaziente = idPaziente,
+                        idVaccino = idVaccino,
+                        esito = when(rec.status) {
+                            VaccineStatus.RECOMMENDED -> EsitoVaccino.CONSENTITO
+                            VaccineStatus.CONTRAINDICATED -> EsitoVaccino.CONTROINDICATO
+                            VaccineStatus.CAUTION -> EsitoVaccino.VALUTARE
+                            VaccineStatus.ALREADY_DONE -> EsitoVaccino.CONSENTITO // O aggiungere ALREADY_DONE a EsitoVaccino
+                        }
+                    )
+                )
+            }
         }
+        
+        return raccomandazioni
     }
-
-        fun valutaVaccinoPerPaziente(
-            vaccino: Vaccino,
-            condizioni: List<CondizioneClinica>
-        ): EsitoVaccino {
-
-            // 1) Vaccini vivi attenuati → controindicati
-            if (vaccino.vivoAttenuato) {
-                return EsitoVaccino.CONTROINDICATO
-            }
-
-            // 2) Condizioni cliniche
-            val esitoCondizioni = valutaCondizioniCliniche(condizioni)
-            if (esitoCondizioni == "CONTROINDICATO") {
-                return EsitoVaccino.CONTROINDICATO
-            }
-
-            if (esitoCondizioni == "VALUTARE") {
-                return EsitoVaccino.VALUTARE
-            }
-
-            // 3) Vaccini non vivi → sempre consentiti
-            return EsitoVaccino.CONSENTITO
-        }
-
-        fun valutaCondizioniCliniche(
-            condizioni: List<CondizioneClinica>
-        ): String {
-
-            // Condizioni che vietano vaccini vivi attenuati
-            if (condizioni.any { it.raccomandazione == "CONTROINDICATO" }) {
-                return "CONTROINDICATO"
-            }
-
-            // Condizioni che richiedono cautela
-            if (condizioni.any { it.raccomandazione == "VALUTARE" }) {
-                return "VALUTARE"
-            }
-
-            return "CONSENTITO"
-        }
-    }
+}
 
 
 

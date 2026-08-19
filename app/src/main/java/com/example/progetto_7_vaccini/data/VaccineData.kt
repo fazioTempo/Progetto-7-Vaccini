@@ -54,17 +54,17 @@ enum class BiologicType(val label: String, val shortName: String) {
     )
 }
 
-enum class MedicalCondition(val label: String) {
-    ASPLENIA("Asplenia / asplenia funzionale"),
-    CHRONIC_KIDNEY_DISEASE("Malattia renale cronica / insufficienza renale"),
-    DIABETES("Diabete mellito"),
-    COPD("BPCO / malattia polmonare cronica"),
-    LIVER_DISEASE("Epatopatia cronica / cirrosi"),
-    HIV("Infezione da HIV"),
-    HEART_DISEASE("Cardiopatia cronica / insufficienza cardiaca"),
-    PREGNANCY("Gravidanza"),
-    CANCER("Neoplasia solida / ematologica"),
-    IBD("Malattia infiammatoria intestinale (Crohn / RCU)")
+enum class MedicalCondition(val label: String, val defaultRec: String) {
+    ASPLENIA("Asplenia / asplenia funzionale", "CONSENTITO"),
+    CHRONIC_KIDNEY_DISEASE("Malattia renale cronica / insufficienza renale", "VALUTARE"),
+    DIABETES("Diabete mellito", "VALUTARE"),
+    COPD("BPCO / malattia polmonare cronica", "VALUTARE"),
+    LIVER_DISEASE("Epatopatia cronica / cirrosi", "VALUTARE"),
+    HIV("Infezione da HIV", "CONTROINDICATO"),
+    HEART_DISEASE("Cardiopatia cronica / insufficienza cardiaca", "VALUTARE"),
+    PREGNANCY("Gravidanza", "CONTROINDICATO"),
+    CANCER("Neoplasia solida / ematologica", "CONTROINDICATO"),
+    IBD("Malattia infiammatoria intestinale (Crohn / RCU)", "VALUTARE")
 }
 
 // ── Modelli di dominio ────────────────────────────────────────────────────────

@@ -30,4 +30,7 @@ interface PazienteCondizioneDao {
         idCondizione: Long
     )
 
+    @Query("DELETE FROM paziente_condizione WHERE idPaziente = :idPaziente")
+    suspend fun cancellaTutteCondizioniPerPaziente(idPaziente: Long)
+
 }
