@@ -1,12 +1,15 @@
 package com.example.progetto_7_vaccini.data.database
 
+import com.example.progetto_7_vaccini.data.database.dao.CondizioneClinicaDao
 import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
 import com.example.progetto_7_vaccini.data.database.entities.Medico
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.data.database.entities.Utente
-import com.example.progetto_7_vaccini.data.database.entities.BiologicType
+import com.example.progetto_7_vaccini.data.database.entities.CondizioneClinica
 import com.example.progetto_7_vaccini.data.database.entities.Vaccino
+import com.example.progetto_7_vaccini.data.database.dao.VaccinoDao
+
 
 object DatabaseInitializer {
 
@@ -24,34 +27,16 @@ object DatabaseInitializer {
         val vacciniDao = database.vaccinoDao()
 
         val vaccinoDao = database.vaccinoDao()
+        //===================
+        //INSERIMENTO VACCINI
+        //===================
+        inserisciVaccini(vaccinoDao)
 
-        val vaccini = listOf(
-            Vaccino(1, "Influenza (inattivato)", "CONSENTITO", false),
-            Vaccino(2, "Pneumococco PCV20", "CONSENTITO", false),
-            Vaccino(3, "Pneumococco PPSV23", "CONSENTITO", false),
-            Vaccino(4, "Epatite A", "CONSENTITO", false),
-            Vaccino(5, "Epatite B", "CONSENTITO", false),
-            Vaccino(6, "HPV", "CONSENTITO", false),
-            Vaccino(7, "Tetano-Difterite-Pertosse (Tdap)", "CONSENTITO", false),
-            Vaccino(8, "Polio IPV", "CONSENTITO", false),
-            Vaccino(9, "Meningococco ACWY", "CONSENTITO", false),
-            Vaccino(10, "Meningococco B", "CONSENTITO", false),
-            Vaccino(11, "COVID-19 mRNA", "CONSENTITO", false),
-            Vaccino(12, "Herpes Zoster (Shingrix)", "CONSENTITO", false),
-
-            Vaccino(20, "MMR", "CONTROINDICATO", true),
-            Vaccino(21, "Varicella", "CONTROINDICATO", true),
-            Vaccino(22, "Zoster vivo (Zostavax)", "CONTROINDICATO", true),
-            Vaccino(23, "Rotavirus", "CONTROINDICATO", true),
-            Vaccino(24, "Febbre gialla", "CONTROINDICATO", true),
-            Vaccino(25, "Polio OPV", "CONTROINDICATO", true),
-            Vaccino(26, "Tifo orale (Ty21a)", "CONTROINDICATO", true),
-            Vaccino(27, "BCG", "CONTROINDICATO", true),
-
-            Vaccino(30, "Vaccini vivi per viaggi internazionali", "VALUTARE", true)
-        )
-
-        vaccini.forEach { vaccinoDao.inserisciVaccino(it) }
+        //===================
+        //INSERIMENTO CONDIZIONI CLINICHE
+        //===================
+        val condizioneClinicaDao =database.condizioneClinicaDao()
+        inserisciCondizioniCliniche(condizioneClinicaDao)
 
 
         //=============================
@@ -122,6 +107,69 @@ object DatabaseInitializer {
             )
         )
 
+
+    }
+    private suspend fun inserisciVaccini(vaccinoDao: VaccinoDao) {
+
+        val vaccini = listOf(
+            Vaccino(1, "Influenza (inattivato)", "INATTIVATO", false),
+            Vaccino(2, "Pneumococco PCV20", "CONIUGATO", false),
+            Vaccino(3, "Pneumococco PPSV23", "POLISACCARIDICO", false),
+            Vaccino(4, "Epatite A", "INATTIVATO", false),
+            Vaccino(5, "Epatite B", "INATTIVATO", false),
+            Vaccino(6, "HPV", "PROTEICO", false),
+            Vaccino(7, "Tetano-Difterite-Pertosse (Tdap)", "TOKSOIDE", false),
+            Vaccino(8, "Polio IPV", "INATTIVATO", false),
+            Vaccino(9, "Meningococco ACWY", "CONIUGATO", false),
+            Vaccino(10, "Meningococco B", "PROTEICO", false),
+            Vaccino(11, "COVID-19 mRNA", "MRNA", false),
+            Vaccino(12, "Herpes Zoster (Shingrix)", "PROTEICO", false),
+
+            Vaccino(20, "MMR", "VIVO_ATTENUATO", true),
+            Vaccino(21, "Varicella", "VIVO_ATTENUATO", true),
+            Vaccino(22, "Zoster vivo (Zostavax)", "VIVO_ATTENUATO", true),
+            Vaccino(23, "Rotavirus", "VIVO_ATTENUATO", true),
+            Vaccino(24, "Febbre gialla", "VIVO_ATTENUATO", true),
+            Vaccino(25, "Polio OPV", "VIVO_ATTENUATO", true),
+            Vaccino(26, "Tifo orale (Ty21a)", "VIVO_ATTENUATO", true),
+            Vaccino(27, "BCG", "VIVO_ATTENUATO", true),
+
+            Vaccino(30, "Vaccini vivi per viaggi internazionali", "VIVO_ATTENUATO", true)
+        )
+
+
+        vaccini.forEach { vaccinoDao.inserisciVaccino(it) }
+    }
+
+    suspend fun  inserisciCondizioniCliniche(condizioneClinicaDao: CondizioneClinicaDao){
+        val condizioniControindicazione = listOf(
+            CondizioneClinica(1, "GRAVIDANZA", "CONTROINDICATO"),
+            CondizioneClinica(2, "IMMUNOSOPPRESSIONE", "CONTROINDICATO"),
+            CondizioneClinica(3, "HIV_CD4_BASSO", "CONTROINDICATO"),
+            CondizioneClinica(4, "TRAPIANTO", "CONTROINDICATO"),
+            CondizioneClinica(5, "TERAPIA_ONCOLOGICA", "CONTROINDICATO")
+        )
+        val condizioniValutare = listOf(
+            CondizioneClinica(10, "CARDIOPATIA_CRONICA", "VALUTARE"),
+            CondizioneClinica(11, "BPCO_ASMA_GRAVE", "VALUTARE"),
+            CondizioneClinica(12, "MALATTIA_EPATICA", "VALUTARE"),
+            CondizioneClinica(13, "MALATTIA_RENALE", "VALUTARE"),
+            CondizioneClinica(14, "DIABETE", "VALUTARE"),
+            CondizioneClinica(15, "OBESITA_SEVERA", "VALUTARE"),
+            CondizioneClinica(16, "ETA_AVANZATA", "VALUTARE")
+        )
+        val condizioniConsentito = listOf(
+            CondizioneClinica(20, "FUMATORE", "CONSENTITO"),        // pneumococco
+            CondizioneClinica(21, "ASPLENIA", "CONSENTITO"),        // meningococco + pneumococco
+            CondizioneClinica(22, "DIABETE_RACCOMANDAZIONE", "CONSENTITO"), // epatite B
+            CondizioneClinica(23, "GRAVIDANZA_TDAP", "CONSENTITO"), // Tdap
+            CondizioneClinica(24, "VIAGGI_INTERNAZIONALI", "CONSENTITO")
+        )
+        val condizioni = condizioniControindicazione +
+                condizioniValutare +
+                condizioniConsentito
+
+        condizioni.forEach { condizioneClinicaDao.inserisciCondizione(it) }
 
     }
 }

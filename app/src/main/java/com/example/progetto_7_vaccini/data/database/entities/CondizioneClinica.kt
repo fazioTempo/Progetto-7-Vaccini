@@ -10,5 +10,5 @@ data class CondizioneClinica(
     val idCondizione: Long = 0,
 
     val nome: String,
-    val descrizione: String
+    val raccomandazione: String
 )
