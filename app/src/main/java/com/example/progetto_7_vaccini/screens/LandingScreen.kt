@@ -54,7 +54,7 @@ fun LandingScreen(
 
             // ── App Name ─────────────────────────────────────────────────────
             Text(
-                text = "VaxAdvisor", // Placeholder per il nome dell'app
+                text = "MyVax",
                 style = MaterialTheme.typography.displayLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = Teal900

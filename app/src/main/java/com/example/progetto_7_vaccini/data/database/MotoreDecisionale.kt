@@ -70,7 +70,7 @@ class MotoreDecisionale {
         ): String {
 
             // Condizioni che vietano vaccini vivi attenuati
-            if (condizioni.any { it.raccomandazione == "CONTROINDICAZIONE" }) {
+            if (condizioni.any { it.raccomandazione == "CONTROINDICATO" }) {
                 return "CONTROINDICATO"
             }
 
