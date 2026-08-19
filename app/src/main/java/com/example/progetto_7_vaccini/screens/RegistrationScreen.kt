@@ -31,7 +31,7 @@ import com.example.progetto_7_vaccini.data.database.entities.EsitoVaccino
 import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.ui.theme.*
-import com.example.progetto_7_vaccini.toSesso
+import com.example.progetto_7_vaccini.data.database.entities.toSesso
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -255,7 +255,7 @@ fun RegistrationScreen(
                             
                             // 2. Recupero ID della cura biologica selezionata
                             val tutteLeCure = database.curaBiologicaDao().getTutteLeCure()
-                            val idCuraSelezionata = tutteLeCure.find { it.nome == biologic!!.label }?.idCura ?: 1L
+                            val idCuraSelezionata = tutteLeCure.find { it.nome.equals(biologic!!.label, ignoreCase = true) }?.idCura ?: 1L
                             
                             // 3. Salvataggio Paziente
                             val idPaziente = database.pazienteDao().inserisciPaziente(
@@ -273,7 +273,7 @@ fun RegistrationScreen(
                             // 4. Salvataggio Condizioni Cliniche
                             val tutteCondizioni = database.condizioneClinicaDao().getTutteLeCondizioni()
                             conditions.value.forEach { condEnum ->
-                                tutteCondizioni.find { it.nome == condEnum.label }?.let { condDb ->
+                                tutteCondizioni.find { it.nome.equals(condEnum.label, ignoreCase = true) }?.let { condDb ->
                                     database.pazienteCondizioneDao().inserisciPazienteCondizione(
                                         PazienteCondizione(idPaziente = idPaziente, idCondizione = condDb.idCondizione)
                                     )

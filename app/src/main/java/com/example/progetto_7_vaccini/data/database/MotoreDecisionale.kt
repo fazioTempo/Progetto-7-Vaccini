@@ -25,14 +25,14 @@ class MotoreDecisionale {
         
         // 1. Recupero Cura Biologica
         val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
-        val biologic = BiologicTypeEnum.entries.find { it.label == curaDb?.nome } ?: BiologicTypeEnum.TNF_INHIBITOR
+        val biologic = BiologicTypeEnum.entries.find { it.label.equals(curaDb?.nome, ignoreCase = true) } ?: BiologicTypeEnum.TNF_INHIBITOR
         
         // 2. Recupero Condizioni Cliniche
         val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(idPaziente)
         val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
         val conditions = condPaziente.mapNotNull { cp ->
             val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
-            MedicalCondition.entries.find { it.label == nomeCond }
+            MedicalCondition.entries.find { it.label.equals(nomeCond, ignoreCase = true) }
         }.toSet()
         
         // 3. Recupero Storia Vaccinale

@@ -41,9 +41,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        var isDbInitialized by mutableStateOf(false)
         val database = DatabaseProvider.getDatabase(applicationContext)
         lifecycleScope.launch {
             DatabaseInitializer.inizializza(database)
+            isDbInitialized = true
         }
         setContent {
             VaccineBiologicTheme {
@@ -59,18 +61,20 @@ class MainActivity : ComponentActivity() {
                 var dbBiologicOptions by remember { mutableStateOf<List<BiologicType>>(BiologicType.entries) }
                 var dbConditionOptions by remember { mutableStateOf<List<MedicalCondition>>(MedicalCondition.entries) }
 
-                LaunchedEffect(Unit) {
-                    val cure = database.curaBiologicaDao().getTutteLeCure()
-                    val cond = database.condizioneClinicaDao().getTutteLeCondizioni()
-                    
-                    if (cure.isNotEmpty()) {
-                        dbBiologicOptions = BiologicType.entries.filter { type ->
-                            cure.any { it.nome == type.label }
+                LaunchedEffect(isDbInitialized) {
+                    if (isDbInitialized) {
+                        val cure = database.curaBiologicaDao().getTutteLeCure()
+                        val cond = database.condizioneClinicaDao().getTutteLeCondizioni()
+                        
+                        if (cure.isNotEmpty()) {
+                            dbBiologicOptions = BiologicType.entries.filter { type ->
+                                cure.any { it.nome.equals(type.label, ignoreCase = true) }
+                            }
                         }
-                    }
-                    if (cond.isNotEmpty()) {
-                        dbConditionOptions = MedicalCondition.entries.filter { enumCond ->
-                            cond.any { it.nome == enumCond.label }
+                        if (cond.isNotEmpty()) {
+                            dbConditionOptions = MedicalCondition.entries.filter { enumCond ->
+                                cond.any { it.nome.equals(enumCond.label, ignoreCase = true) }
+                            }
                         }
                     }
                 }
@@ -148,14 +152,14 @@ class MainActivity : ComponentActivity() {
                                             patientSex = paziente.sesso.toSex()
                                             
                                             val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
-                                            patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
+                                            patientBiologic = BiologicType.entries.find { it.label.equals(curaDb?.nome, ignoreCase = true) } ?: BiologicType.TNF_INHIBITOR
                                             
                                             // Caricamento condizioni dal DB
                                             val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
                                             val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
                                             patientConditions = condPaziente.mapNotNull { cp ->
                                                 val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
-                                                MedicalCondition.entries.find { it.label == nomeCond }
+                                                MedicalCondition.entries.find { it.label.equals(nomeCond, ignoreCase = true) }
                                             }.toSet()
 
                                             // Caricamento storia vaccinale dal DB
@@ -279,7 +283,7 @@ class MainActivity : ComponentActivity() {
                                     currentPatientId?.let { id ->
                                         // 1. Aggiorna dati base e cura
                                         val tutteLeCure = database.curaBiologicaDao().getTutteLeCure()
-                                        val idCuraSelezionata = tutteLeCure.find { it.nome == biologic.label }?.idCura ?: 1L
+                                        val idCuraSelezionata = tutteLeCure.find { it.nome.equals(biologic.label, ignoreCase = true) }?.idCura ?: 1L
                                         
                                         val p = database.pazienteDao().getPaziente(id)
                                         if (p != null) {
@@ -298,7 +302,7 @@ class MainActivity : ComponentActivity() {
                                         database.pazienteCondizioneDao().cancellaTutteCondizioniPerPaziente(id)
                                         val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
                                         conditions.forEach { condEnum ->
-                                            tutteCondDb.find { it.nome == condEnum.label }?.let { condDb ->
+                                            tutteCondDb.find { it.nome.equals(condEnum.label, ignoreCase = true) }?.let { condDb ->
                                                 database.pazienteCondizioneDao().inserisciPazienteCondizione(
                                                     com.example.progetto_7_vaccini.data.database.entities.PazienteCondizione(idPaziente = id, idCondizione = condDb.idCondizione)
                                                 )
@@ -365,14 +369,14 @@ class MainActivity : ComponentActivity() {
                                     patientSex = paziente.sesso.toSex()
                                     
                                     val curaDb = database.curaBiologicaDao().getCura(paziente.idCura)
-                                    patientBiologic = BiologicType.entries.find { it.label == curaDb?.nome } ?: BiologicType.TNF_INHIBITOR
+                                    patientBiologic = BiologicType.entries.find { it.label.equals(curaDb?.nome, ignoreCase = true) } ?: BiologicType.TNF_INHIBITOR
                                     
                                     // Caricamento condizioni e storia
                                     val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
                                     val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
                                     patientConditions = condPaziente.mapNotNull { cp ->
                                         val nomeCond = tutteCondDb.find { it.idCondizione == cp.idCondizione }?.nome
-                                        MedicalCondition.entries.find { it.label == nomeCond }
+                                        MedicalCondition.entries.find { it.label.equals(nomeCond, ignoreCase = true) }
                                     }.toSet()
 
                                     val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(paziente.idPaziente)

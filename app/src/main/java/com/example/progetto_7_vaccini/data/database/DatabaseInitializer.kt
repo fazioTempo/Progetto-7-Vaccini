@@ -16,39 +16,53 @@ object DatabaseInitializer {
     suspend fun inizializza(database: AppDatabase) {
 
         val utenteDao = database.utenteDao()
-
-        if (utenteDao.contaMedici() > 0) {
-            return
-        }
-
         val medicoDao = database.medicoDao()
         val pazienteDao = database.pazienteDao()
         val curaBiologicaDao = database.curaBiologicaDao()
-        val vacciniDao = database.vaccinoDao()
-
         val vaccinoDao = database.vaccinoDao()
-        //===================
-        //INSERIMENTO VACCINI
-        //===================
-        inserisciVaccini(vaccinoDao)
+        val condizioneClinicaDao = database.condizioneClinicaDao()
 
         //===================
-        //INSERIMENTO CONDIZIONI CLINICHE
+        //INSERIMENTO/AGGIORNAMENTO VACCINI
         //===================
-        val condizioneClinicaDao =database.condizioneClinicaDao()
-        inserisciCondizioniCliniche(condizioneClinicaDao)
+        val vacciniPresenti = vaccinoDao.getTuttiVaccini()
+        if (vacciniPresenti.isEmpty()) {
+            inserisciVaccini(vaccinoDao)
+        }
 
+        //===================
+        //INSERIMENTO/AGGIORNAMENTO CONDIZIONI CLINICHE
+        //===================
+        val condizioniPresenti = condizioneClinicaDao.getTutteLeCondizioni()
+        if (condizioniPresenti.isEmpty()) {
+            inserisciCondizioniCliniche(condizioneClinicaDao)
+        } else {
+            // Se sono presenti ma con nomi vecchi, potremmo volerle aggiornare o aggiungere quelle nuove
+            // Per ora assicuriamoci che se mancano i nuovi label, vengano inseriti
+            com.example.progetto_7_vaccini.data.MedicalCondition.entries.forEach { enumCond ->
+                if (condizioniPresenti.none { it.nome.equals(enumCond.label, ignoreCase = true) }) {
+                    condizioneClinicaDao.inserisciCondizione(
+                        CondizioneClinica(nome = enumCond.label, raccomandazione = enumCond.defaultRec)
+                    )
+                }
+            }
+        }
 
         //=============================
         //INSRIMENTO TERAPIE BIOLOGICHE
         //=============================
-        com.example.progetto_7_vaccini.data.BiologicType.entries.forEach { type ->
-            curaBiologicaDao.inserisciCuraBiologica(
-                CuraBiologica(
-                    nome = type.label,
-                    principioAttivo = type.shortName
+        val curePresenti = curaBiologicaDao.getTutteLeCure()
+        if (curePresenti.isEmpty()) {
+            com.example.progetto_7_vaccini.data.BiologicType.entries.forEach { type ->
+                curaBiologicaDao.inserisciCuraBiologica(
+                    CuraBiologica(nome = type.label, principioAttivo = type.shortName)
                 )
-            )
+            }
+        }
+
+        // Se ci sono già medici, non inseriamo i dati di test (medici e pazienti di esempio)
+        if (utenteDao.contaMedici() > 0) {
+            return
         }
 
         val tutteLeCure = curaBiologicaDao.getTutteLeCure()
