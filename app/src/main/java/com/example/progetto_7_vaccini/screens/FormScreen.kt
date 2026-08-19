@@ -49,7 +49,13 @@ fun FormScreen(
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }
 
-    val isValid = name.isNotBlank() && surname.isNotBlank() && sex != null && biologic != null
+    var showErrors by remember { mutableStateOf(false) }
+
+    val isFormValid = name.isNotBlank() && 
+                     surname.isNotBlank() && 
+                     sex != null && 
+                     biologic != null && 
+                     DateUtils.isValidDate(birthDate)
 
     Scaffold(
         topBar = {
@@ -115,14 +121,15 @@ fun FormScreen(
                 conditions = conditions.value,
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
-                onHistoryChange = { history.value = it }
+                onHistoryChange = { history.value = it },
+                showErrors = showErrors
             )
 
             // ── Submit ────────────────────────────────────────────────────────
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick  = { 
-                    if (isValid) {
+                    if (isFormValid) {
                         onSubmit(
                             name,
                             surname,
@@ -132,9 +139,10 @@ fun FormScreen(
                             conditions.value, 
                             history.value
                         ) 
+                    } else {
+                        showErrors = true
                     }
                 },
-                enabled  = isValid && DateUtils.isValidDate(birthDate),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -172,7 +180,8 @@ fun VaccineFormContent(
     conditions: Set<MedicalCondition>,
     onConditionsChange: (Set<MedicalCondition>) -> Unit,
     history: Set<String>,
-    onHistoryChange: (Set<String>) -> Unit
+    onHistoryChange: (Set<String>) -> Unit,
+    showErrors: Boolean = false
 ) {
     var sexExpanded      by remember { mutableStateOf(false) }
     var biologicExpanded by remember { mutableStateOf(false) }
@@ -201,7 +210,8 @@ fun VaccineFormContent(
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,
                     shape         = RoundedCornerShape(12.dp),
-                    colors        = outlinedFieldColors()
+                    colors        = outlinedFieldColors(),
+                    isError       = showErrors && name.isBlank()
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -213,7 +223,8 @@ fun VaccineFormContent(
                     modifier      = Modifier.fillMaxWidth(),
                     singleLine    = true,
                     shape         = RoundedCornerShape(12.dp),
-                    colors        = outlinedFieldColors()
+                    colors        = outlinedFieldColors(),
+                    isError       = showErrors && surname.isBlank()
                 )
             }
         }
@@ -222,7 +233,14 @@ fun VaccineFormContent(
         SectionLabel("Data di nascita")
         
         var showDatePicker by remember { mutableStateOf(false) }
-        val datePickerState = rememberDatePickerState()
+        val datePickerState = rememberDatePickerState(
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    // Impedisce la selezione di date future
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+            }
+        )
 
         if (showDatePicker) {
             DatePickerDialog(
@@ -264,7 +282,7 @@ fun VaccineFormContent(
             modifier      = Modifier.fillMaxWidth().clickable { showDatePicker = true },
             shape         = RoundedCornerShape(12.dp),
             colors        = outlinedFieldColors(),
-            isError       = birthDate.isNotEmpty() && !DateUtils.isValidDate(birthDate)
+            isError       = (showErrors && birthDate.isEmpty()) || (birthDate.isNotEmpty() && !DateUtils.isValidDate(birthDate))
         )
 
         // ── Sex dropdown ──────────────────────────────────────────────────
@@ -281,7 +299,8 @@ fun VaccineFormContent(
                 trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sexExpanded) },
                 modifier      = Modifier.fillMaxWidth().menuAnchor(),
                 shape         = RoundedCornerShape(12.dp),
-                colors        = outlinedFieldColors()
+                colors        = outlinedFieldColors(),
+                isError       = showErrors && sex == null
             )
             ExposedDropdownMenu(
                 expanded        = sexExpanded,
@@ -309,11 +328,12 @@ fun VaccineFormContent(
                 value         = biologic?.label ?: "",
                 onValueChange = {},
                 readOnly      = true,
-                placeholder   = { Text("Seleziona tipo…", color = Slate400) },
+                placeholder   = { Text("Seleziona terapia…", color = Slate400) },
                 trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = biologicExpanded) },
                 modifier      = Modifier.fillMaxWidth().menuAnchor(),
                 shape         = RoundedCornerShape(12.dp),
-                colors        = outlinedFieldColors()
+                colors        = outlinedFieldColors(),
+                isError       = showErrors && biologic == null
             )
             ExposedDropdownMenu(
                 expanded        = biologicExpanded,

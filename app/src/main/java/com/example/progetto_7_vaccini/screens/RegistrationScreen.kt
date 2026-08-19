@@ -59,15 +59,13 @@ fun RegistrationScreen(
 
     LaunchedEffect(Unit) {
         doctorList = database.medicoDao().getTuttiIMedici()
-        if (doctorList.isNotEmpty()) {
-            selectedDoctor = doctorList[0]
-        }
     }
 
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+    var showErrors by remember { mutableStateOf(false) }
 
-            val isFormValid = ValidationUtils.isValidEmail(email) && 
+    val isFormValid = ValidationUtils.isValidEmail(email) && 
             ValidationUtils.isValidPassword(password) && 
             password == confirmPassword &&
             name.isNotBlank() && 
@@ -137,7 +135,8 @@ fun RegistrationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = outlinedFieldColors()
+                colors = outlinedFieldColors(),
+                isError = showErrors && !ValidationUtils.isValidEmail(email)
             )
 
             OutlinedTextField(
@@ -149,7 +148,7 @@ fun RegistrationScreen(
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 colors = outlinedFieldColors(),
-                isError = password.isNotEmpty() && !ValidationUtils.isValidPassword(password),
+                isError = (password.isNotEmpty() && !ValidationUtils.isValidPassword(password)) || (showErrors && password.isEmpty()),
                 supportingText = {
                     if (password.isNotEmpty() && !ValidationUtils.isValidPassword(password)) {
                         Text("Min. 10 car., 1 Maiusc., 1 Minusc., 1 Num., 1 Spec.")
@@ -165,7 +164,8 @@ fun RegistrationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = outlinedFieldColors()
+                colors = outlinedFieldColors(),
+                isError = showErrors && (confirmPassword != password || confirmPassword.isEmpty())
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = Slate200)
@@ -177,14 +177,15 @@ fun RegistrationScreen(
                 onExpandedChange = { doctorExpanded = !doctorExpanded }
             ) {
                 OutlinedTextField(
-                    value = selectedDoctor?.let { "${it.nome} ${it.cognome}" } ?: "Caricamento medici...",
+                    value = selectedDoctor?.let { "${it.nome} ${it.cognome}" } ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    placeholder = { Text("Seleziona il tuo medico", color = Slate400) },
+                    placeholder = { Text("Seleziona medico…", color = Slate400) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = doctorExpanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = outlinedFieldColors()
+                    colors = outlinedFieldColors(),
+                    isError = showErrors && selectedDoctor == null
                 )
                 ExposedDropdownMenu(
                     expanded = doctorExpanded,
@@ -226,7 +227,8 @@ fun RegistrationScreen(
                 conditions = conditions.value,
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
-                onHistoryChange = { history.value = it }
+                onHistoryChange = { history.value = it },
+                showErrors = showErrors
             )
 
             // ── Register Button ──────────────────────────────────────────────
@@ -263,9 +265,10 @@ fun RegistrationScreen(
                             
                             onRegisterSuccess(email)
                         }
+                    } else {
+                        showErrors = true
                     }
                 },
-                enabled = isFormValid,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(

@@ -42,11 +42,17 @@ fun ModifyDataScreen(
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }
 
+    var showErrors by remember { mutableStateOf(false) }
+
     var email        by rememberSaveable { mutableStateOf(initialEmail) }
     var isEmailEditable by remember { mutableStateOf(false) }
     var emailError   by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val isValid = name.isNotBlank() && surname.isNotBlank() && sex != null && biologic != null
+    val isFormValid = name.isNotBlank() && 
+                     surname.isNotBlank() && 
+                     sex != null && 
+                     biologic != null && 
+                     DateUtils.isValidDate(birthDate)
 
     Scaffold(
         topBar = {
@@ -158,14 +164,15 @@ fun ModifyDataScreen(
                 conditions = conditions.value,
                 onConditionsChange = { conditions.value = it },
                 history = history.value,
-                onHistoryChange = { history.value = it }
+                onHistoryChange = { history.value = it },
+                showErrors = showErrors
             )
 
             // ── Conferma Dati ──────────────────────────────────────────────────
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick  = { 
-                    if (isValid) {
+                    if (isFormValid) {
                         onConfirm(
                             name,
                             surname,
@@ -175,9 +182,10 @@ fun ModifyDataScreen(
                             conditions.value, 
                             history.value
                         ) 
+                    } else {
+                        showErrors = true
                     }
                 },
-                enabled  = isValid && DateUtils.isValidDate(birthDate),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape    = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
