@@ -30,12 +30,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.progetto_7_vaccini.data.BiologicType
-import com.example.progetto_7_vaccini.data.Sex
-import com.example.progetto_7_vaccini.data.VaccinePriority
-import com.example.progetto_7_vaccini.data.VaccineRec
-import com.example.progetto_7_vaccini.data.VaccineStatus
-import com.example.progetto_7_vaccini.data.VaccineType
+import com.example.progetto_7_vaccini.data.database.*
+import com.example.progetto_7_vaccini.data.database.entities.*
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,8 +40,8 @@ fun ResultsScreen(
     patientName    : String,
     patientSurname : String,
     patientAge     : Int?,
-    sex            : Sex,
-    biologic       : BiologicType,
+    sex            : String,
+    biologic       : CuraBiologica,
     recommendations: List<VaccineRec>,
     onBack         : () -> Unit
 ) {
@@ -97,8 +93,8 @@ fun ResultsContent(
     patientName: String,
     patientSurname: String,
     patientAge: Int?,
-    sex: Sex,
-    biologic: BiologicType,
+    sex: String,
+    biologic: CuraBiologica,
     recommendations: List<VaccineRec>,
     modifier: Modifier = Modifier
 ) {
@@ -211,7 +207,7 @@ fun ResultsContent(
 // ── Components ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PatientSummaryCard(name: String, surname: String, age: Int?, sex: Sex, biologic: BiologicType) {
+private fun PatientSummaryCard(name: String, surname: String, age: Int?, sex: String, biologic: CuraBiologica) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape    = RoundedCornerShape(16.dp),
@@ -224,11 +220,11 @@ private fun PatientSummaryCard(name: String, surname: String, age: Int?, sex: Se
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabeledValue(label = "Paziente", value = "$name $surname")
-                LabeledValue(label = "Terapia biologica", value = biologic.label)
+                LabeledValue(label = "Terapia biologica", value = biologic.nome)
             }
             Column(modifier = Modifier.width(IntrinsicSize.Max), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabeledValue(label = "Età", value = age?.toString() ?: "N/D")
-                LabeledValue(label = "Sesso", value = sex.label)
+                LabeledValue(label = "Sesso", value = sex)
             }
         }
     }

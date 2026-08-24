@@ -16,7 +16,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.progetto_7_vaccini.data.*
+import com.example.progetto_7_vaccini.data.DateUtils
+import com.example.progetto_7_vaccini.data.ValidationUtils
+import com.example.progetto_7_vaccini.data.database.entities.CondizioneClinica
+import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
+import com.example.progetto_7_vaccini.data.database.entities.Vaccino
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,22 +29,23 @@ fun ModifyDataScreen(
     initialName: String,
     initialSurname: String,
     initialBirthDate: String,
-    initialSex: Sex?,
-    initialBiologic: BiologicType?,
-    initialConditions: Set<MedicalCondition>,
-    initialHistory: Set<String>,
+    initialSex: String?,
+    initialBiologic: CuraBiologica?,
+    initialConditions: Set<Long>,
+    initialHistory: Set<Long>,
     initialEmail: String,
-    biologicOptions: List<BiologicType> = BiologicType.entries,
-    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
+    biologicOptions: List<CuraBiologica> = emptyList(),
+    conditionOptions: List<CondizioneClinica> = emptyList(),
+    vaccineOptions: List<Vaccino> = emptyList(),
     onBack: () -> Unit,
     onEmailUpdate: (String, (String?) -> Unit) -> Unit,
-    onConfirm: (nome: String, cognome: String, birthDate: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
+    onConfirm: (nome: String, cognome: String, birthDate: String, sex: String, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf(initialName) }
     var surname      by rememberSaveable { mutableStateOf(initialSurname) }
     var birthDate    by rememberSaveable { mutableStateOf(initialBirthDate) }
-    var sex          by rememberSaveable { mutableStateOf<Sex?>(initialSex) }
-    var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(initialBiologic) }
+    var sex          by rememberSaveable { mutableStateOf<String?>(initialSex) }
+    var biologic     by rememberSaveable { mutableStateOf<CuraBiologica?>(initialBiologic) }
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }
 
@@ -169,7 +174,8 @@ fun ModifyDataScreen(
                 onHistoryChange = { history.value = it },
                 showErrors = showErrors,
                 biologicOptions = biologicOptions,
-                conditionOptions = conditionOptions
+                conditionOptions = conditionOptions,
+                vaccineOptions = vaccineOptions
             )
 
             // ── Conferma Dati ──────────────────────────────────────────────────

@@ -21,11 +21,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.progetto_7_vaccini.data.BiologicType
-import com.example.progetto_7_vaccini.data.MedicalCondition
-import com.example.progetto_7_vaccini.data.Sex
 import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
+import com.example.progetto_7_vaccini.data.database.entities.CondizioneClinica
+import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
+import com.example.progetto_7_vaccini.data.database.entities.Vaccino
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,20 +34,21 @@ fun FormScreen(
     initialName: String = "",
     initialSurname: String = "",
     initialBirthDate: String = "",
-    initialSex: Sex? = null,
-    initialBiologic: BiologicType? = null,
-    initialConditions: Set<MedicalCondition> = emptySet(),
-    initialHistory: Set<String> = emptySet(),
-    biologicOptions: List<BiologicType> = BiologicType.entries,
-    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
+    initialSex: String? = null,
+    initialBiologic: CuraBiologica? = null,
+    initialConditions: Set<Long> = emptySet(),
+    initialHistory: Set<Long> = emptySet(),
+    biologicOptions: List<CuraBiologica> = emptyList(),
+    conditionOptions: List<CondizioneClinica> = emptyList(),
+    vaccineOptions: List<Vaccino> = emptyList(),
     onBack: () -> Unit,
-    onSubmit: (nome: String, cognome: String, birthDate: String, sex: Sex, biologic: BiologicType, conditions: Set<MedicalCondition>, history: Set<String>) -> Unit
+    onSubmit: (nome: String, cognome: String, birthDate: String, sex: String, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf(initialName) }
     var surname      by rememberSaveable { mutableStateOf(initialSurname) }
     var birthDate    by rememberSaveable { mutableStateOf(initialBirthDate) }
-    var sex          by rememberSaveable { mutableStateOf<Sex?>(initialSex) }
-    var biologic     by rememberSaveable { mutableStateOf<BiologicType?>(initialBiologic) }
+    var sex          by rememberSaveable { mutableStateOf<String?>(initialSex) }
+    var biologic     by rememberSaveable { mutableStateOf<CuraBiologica?>(initialBiologic) }
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }
 
@@ -128,7 +129,8 @@ fun FormScreen(
                 onHistoryChange = { history.value = it },
                 showErrors = showErrors,
                 biologicOptions = biologicOptions,
-                conditionOptions = conditionOptions
+                conditionOptions = conditionOptions,
+                vaccineOptions = vaccineOptions
             )
 
             // ── Submit ────────────────────────────────────────────────────────
@@ -179,29 +181,23 @@ fun VaccineFormContent(
     onSurnameChange: (String) -> Unit,
     birthDate: String,
     onBirthDateChange: (String) -> Unit,
-    sex: Sex?,
-    onSexChange: (Sex) -> Unit,
-    biologic: BiologicType?,
-    onBiologicChange: (BiologicType) -> Unit,
-    conditions: Set<MedicalCondition>,
-    onConditionsChange: (Set<MedicalCondition>) -> Unit,
-    history: Set<String>,
-    onHistoryChange: (Set<String>) -> Unit,
+    sex: String?,
+    onSexChange: (String) -> Unit,
+    biologic: CuraBiologica?,
+    onBiologicChange: (CuraBiologica) -> Unit,
+    conditions: Set<Long>,
+    onConditionsChange: (Set<Long>) -> Unit,
+    history: Set<Long>,
+    onHistoryChange: (Set<Long>) -> Unit,
     showErrors: Boolean = false,
-    biologicOptions: List<BiologicType> = BiologicType.entries,
-    conditionOptions: List<MedicalCondition> = MedicalCondition.entries
+    biologicOptions: List<CuraBiologica> = emptyList(),
+    conditionOptions: List<CondizioneClinica> = emptyList(),
+    vaccineOptions: List<Vaccino> = emptyList()
 ) {
     var sexExpanded      by remember { mutableStateOf(false) }
     var biologicExpanded by remember { mutableStateOf(false) }
 
-    val vaccineHistoryOptions = listOf(
-        "Influenza (vaccino inattivato o ricombinante)",
-        "Pneumococcico coniugato (PCV15 o PCV20)",
-        "Epatite B",
-        "Herpes Zoster ricombinante (Shingrix)",
-        "Td / Tdap (Tetano-Difterite-Pertosse)",
-        "COVID-19 (mRNA o subunità proteica)"
-    )
+    val sexOptions = listOf("Maschio", "Femmina")
 
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         // ── Patient name & surname ────────────────────────────────────────
@@ -300,7 +296,7 @@ fun VaccineFormContent(
             onExpandedChange = { sexExpanded = !sexExpanded }
         ) {
             OutlinedTextField(
-                value         = sex?.label ?: "",
+                value         = sex ?: "",
                 onValueChange = {},
                 readOnly      = true,
                 placeholder   = { Text("Seleziona…", color = Slate400) },
@@ -314,9 +310,9 @@ fun VaccineFormContent(
                 expanded        = sexExpanded,
                 onDismissRequest = { sexExpanded = false }
             ) {
-                Sex.entries.forEach { option ->
+                sexOptions.forEach { option ->
                     DropdownMenuItem(
-                        text    = { Text(option.label) },
+                        text    = { Text(option) },
                         onClick = {
                             onSexChange(option)
                             sexExpanded = false
@@ -333,7 +329,7 @@ fun VaccineFormContent(
             onExpandedChange = { biologicExpanded = !biologicExpanded }
         ) {
             OutlinedTextField(
-                value         = biologic?.label ?: "",
+                value         = biologic?.nome ?: "",
                 onValueChange = {},
                 readOnly      = true,
                 placeholder   = { Text("Seleziona terapia…", color = Slate400) },
@@ -350,7 +346,7 @@ fun VaccineFormContent(
             ) {
                 biologicOptions.forEach { option ->
                     DropdownMenuItem(
-                        text    = { Text(option.label, style = MaterialTheme.typography.bodySmall) },
+                        text    = { Text(option.nome, style = MaterialTheme.typography.bodySmall) },
                         onClick = {
                             onBiologicChange(option)
                             biologicExpanded = false
@@ -364,13 +360,13 @@ fun VaccineFormContent(
         SectionLabel("Condizioni mediche rilevanti  •  seleziona tutte le pertinenti")
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             conditionOptions.forEach { condition ->
-                val checked = conditions.contains(condition)
+                val checked = conditions.contains(condition.idCondizione)
                 ConditionCheckItem(
-                    label   = condition.label,
+                    label   = condition.nome,
                     checked = checked,
                     onClick = {
                         onConditionsChange(
-                            if (checked) conditions - condition else conditions + condition
+                            if (checked) conditions - condition.idCondizione else conditions + condition.idCondizione
                         )
                     }
                 )
@@ -384,16 +380,16 @@ fun VaccineFormContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            vaccineHistoryOptions.forEach { vaccineName ->
-                val isSelected = history.contains(vaccineName)
+            vaccineOptions.forEach { vaccino ->
+                val isSelected = history.contains(vaccino.idVaccino)
                 FilterChip(
                     selected = isSelected,
                     onClick = {
                         onHistoryChange(
-                            if (isSelected) history - vaccineName else history + vaccineName
+                            if (isSelected) history - vaccino.idVaccino else history + vaccino.idVaccino
                         )
                     },
-                    label = { Text(vaccineName, fontSize = 12.sp) },
+                    label = { Text(vaccino.nome, fontSize = 12.sp) },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = Teal100,
                         selectedLabelColor = Teal900,

@@ -5,5 +5,6 @@ import androidx.room.Entity
 enum class EsitoVaccino {
     CONSENTITO,
     CONTROINDICATO,
-    VALUTARE
+    VALUTARE,
+    FATTO
 }

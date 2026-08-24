@@ -17,29 +17,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.progetto_7_vaccini.data.BiologicType
-import com.example.progetto_7_vaccini.data.MedicalCondition
-import com.example.progetto_7_vaccini.data.Sex
-import com.example.progetto_7_vaccini.data.database.AppDatabase
-import com.example.progetto_7_vaccini.data.database.entities.Medico
-import com.example.progetto_7_vaccini.data.database.entities.Paziente
-import com.example.progetto_7_vaccini.data.database.entities.Utente
-import com.example.progetto_7_vaccini.data.database.entities.Sesso
-import com.example.progetto_7_vaccini.data.database.entities.PazienteCondizione
-import com.example.progetto_7_vaccini.data.database.entities.Vaccinazione
-import com.example.progetto_7_vaccini.data.database.entities.EsitoVaccino
 import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
+import com.example.progetto_7_vaccini.data.database.AppDatabase
+import com.example.progetto_7_vaccini.data.database.entities.*
 import com.example.progetto_7_vaccini.ui.theme.*
-import com.example.progetto_7_vaccini.data.database.entities.toSesso
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistrationScreen(
     database: AppDatabase,
-    biologicOptions: List<BiologicType> = BiologicType.entries,
-    conditionOptions: List<MedicalCondition> = MedicalCondition.entries,
+    biologicOptions: List<CuraBiologica> = emptyList(),
+    conditionOptions: List<CondizioneClinica> = emptyList(),
+    vaccineOptions: List<Vaccino> = emptyList(),
     onBack: () -> Unit,
     onRegisterSuccess: (String) -> Unit
 ) {
@@ -52,10 +43,10 @@ fun RegistrationScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var surname by rememberSaveable { mutableStateOf("") }
     var birthDate by rememberSaveable { mutableStateOf("") }
-    var sex by rememberSaveable { mutableStateOf<Sex?>(null) }
-    var biologic by rememberSaveable { mutableStateOf<BiologicType?>(null) }
-    val conditions = rememberSaveable { mutableStateOf(setOf<MedicalCondition>()) }
-    val history = rememberSaveable { mutableStateOf(setOf<String>()) }
+    var sex by rememberSaveable { mutableStateOf<String?>(null) }
+    var biologic by rememberSaveable { mutableStateOf<CuraBiologica?>(null) }
+    val conditions = rememberSaveable { mutableStateOf(setOf<Long>()) }
+    val history = rememberSaveable { mutableStateOf(setOf<Long>()) }
 
     // ── Medico Scelto ────────────────────────────────────────────────────────
     var doctorList by remember { mutableStateOf<List<Medico>>(emptyList()) }
@@ -235,7 +226,8 @@ fun RegistrationScreen(
                 onHistoryChange = { history.value = it },
                 showErrors = showErrors,
                 biologicOptions = biologicOptions,
-                conditionOptions = conditionOptions
+                conditionOptions = conditionOptions,
+                vaccineOptions = vaccineOptions
             )
 
             // ── Register Button ──────────────────────────────────────────────
@@ -254,8 +246,7 @@ fun RegistrationScreen(
                             )
                             
                             // 2. Recupero ID della cura biologica selezionata
-                            val tutteLeCure = database.curaBiologicaDao().getTutteLeCure()
-                            val idCuraSelezionata = tutteLeCure.find { it.nome.equals(biologic!!.label, ignoreCase = true) }?.idCura ?: 1L
+                            val idCuraSelezionata = biologic?.idCura ?: 1L
                             
                             // 3. Salvataggio Paziente
                             val idPaziente = database.pazienteDao().inserisciPaziente(
@@ -266,33 +257,27 @@ fun RegistrationScreen(
                                     nome = name,
                                     cognome = surname,
                                     dataNascita = birthDate,
-                                    sesso = sex!!.toSesso()
+                                    sesso = if (sex == "Maschio") Sesso.MASCHIO else Sesso.FEMMINA
                                 )
                             )
 
                             // 4. Salvataggio Condizioni Cliniche
-                            val tutteCondizioni = database.condizioneClinicaDao().getTutteLeCondizioni()
-                            conditions.value.forEach { condEnum ->
-                                tutteCondizioni.find { it.nome.equals(condEnum.label, ignoreCase = true) }?.let { condDb ->
-                                    database.pazienteCondizioneDao().inserisciPazienteCondizione(
-                                        PazienteCondizione(idPaziente = idPaziente, idCondizione = condDb.idCondizione)
-                                    )
-                                }
+                            conditions.value.forEach { condId ->
+                                database.pazienteCondizioneDao().inserisciPazienteCondizione(
+                                    PazienteCondizione(idPaziente = idPaziente, idCondizione = condId)
+                                )
                             }
 
                             // 5. Salvataggio Storia Vaccinale
-                            val tuttiVaccini = database.vaccinoDao().getTuttiVaccini()
-                            history.value.forEach { vaccinoNome ->
-                                tuttiVaccini.find { it.nome == vaccinoNome }?.let { vaccinoDb ->
-                                    database.vaccinazioneDao().inserisciVaccinazione(
-                                        Vaccinazione(
-                                            idPaziente = idPaziente,
-                                            idVaccino = vaccinoDb.idVaccino,
-                                            dataSomministrazione = "01/01/2024", // Data fittizia se non inserita
-                                            numeroDose = 1
-                                        )
+                            history.value.forEach { vaccinoId ->
+                                database.vaccinazioneDao().inserisciVaccinazione(
+                                    Vaccinazione(
+                                        idPaziente = idPaziente,
+                                        idVaccino = vaccinoId,
+                                        dataSomministrazione = "01/01/2024", // Data fittizia
+                                        numeroDose = 1
                                     )
-                                }
+                                )
                             }
                             
                             onRegisterSuccess(email)
