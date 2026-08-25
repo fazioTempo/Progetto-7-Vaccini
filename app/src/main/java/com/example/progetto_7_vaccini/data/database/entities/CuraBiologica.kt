@@ -2,6 +2,7 @@ package com.example.progetto_7_vaccini.data.database.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.io.Serializable
 
 @Entity(tableName = "cura_biologica")
 data class CuraBiologica(
@@ -11,4 +12,4 @@ data class CuraBiologica(
 
     val nome: String,
     val principioAttivo: String
-)
+) : Serializable

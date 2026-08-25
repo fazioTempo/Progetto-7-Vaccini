@@ -2,6 +2,7 @@ package com.example.progetto_7_vaccini.data.database
 
 import com.example.progetto_7_vaccini.data.database.entities.*
 import com.example.progetto_7_vaccini.data.DateUtils
+import java.io.Serializable
 
 // ── Modelli di dominio (Migrati da VaccineData) ──────────────────────────────
 
@@ -24,14 +25,14 @@ data class VaccineRec(
     val reason: String,
     val timing: String? = null,
     val priority: VaccinePriority = VaccinePriority.ROUTINE
-)
+) : Serializable
 
 data class BiologicProfile(
     val immunoLevel: ImmunoLevel,
     val keyRisks: List<String>,
     val generalNote: String,
     val preStartNote: String? = null
-)
+) : Serializable
 
 class MotoreDecisionale {
 

@@ -28,5 +28,9 @@ data class Vaccinazione(
 
     val idPaziente: Long,
 
-    val idVaccino: Long
+    val idVaccino: Long,
+
+    val dataSomministrazione: String,
+
+    val numeroDose: Int
 )
