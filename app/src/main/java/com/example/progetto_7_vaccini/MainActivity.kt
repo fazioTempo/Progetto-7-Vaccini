@@ -302,9 +302,7 @@ class MainActivity : ComponentActivity() {
                                             database.vaccinazioneDao().inserisciVaccinazione(
                                                 Vaccinazione(
                                                     idPaziente = id,
-                                                    idVaccino = vaccinoId,
-                                                    dataSomministrazione = "01/01/2024",
-                                                    numeroDose = 1
+                                                    idVaccino = vaccinoId
                                                 )
                                             )
                                         }
