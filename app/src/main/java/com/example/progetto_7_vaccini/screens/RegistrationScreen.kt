@@ -273,9 +273,7 @@ fun RegistrationScreen(
                                 database.vaccinazioneDao().inserisciVaccinazione(
                                     Vaccinazione(
                                         idPaziente = idPaziente,
-                                        idVaccino = vaccinoId,
-                                        dataSomministrazione = "01/01/2024", // Data fittizia
-                                        numeroDose = 1
+                                        idVaccino = vaccinoId
                                     )
                                 )
                             }

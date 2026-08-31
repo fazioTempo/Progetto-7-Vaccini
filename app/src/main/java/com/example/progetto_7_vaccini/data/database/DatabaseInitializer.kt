@@ -90,29 +90,13 @@ object DatabaseInitializer {
     }
 
     private suspend fun inserisciVaccini(vaccinoDao: VaccinoDao) {
-        val vaccini = listOf(
-            Vaccino(1, "Influenza (inattivato)", "INATTIVATO", false),
-            Vaccino(2, "Pneumococco PCV20", "CONIUGATO", false),
-            Vaccino(3, "Pneumococco PPSV23", "POLISACCARIDICO", false),
-            Vaccino(4, "Epatite A", "INATTIVATO", false),
-            Vaccino(5, "Epatite B", "INATTIVATO", false),
-            Vaccino(6, "HPV", "PROTEICO", false),
-            Vaccino(7, "Tetano-Difterite-Pertosse (Tdap)", "TOKSOIDE", false),
-            Vaccino(8, "Polio IPV", "INATTIVATO", false),
-            Vaccino(9, "Meningococco ACWY", "CONIUGATO", false),
-            Vaccino(10, "Meningococco B", "PROTEICO", false),
-            Vaccino(11, "COVID-19 mRNA", "MRNA", false),
-            Vaccino(12, "Herpes Zoster (Shingrix)", "PROTEICO", false),
-            Vaccino(20, "MMR", "VIVO_ATTENUATO", true),
-            Vaccino(21, "Varicella", "VIVO_ATTENUATO", true),
-            Vaccino(22, "Zoster vivo (Zostavax)", "VIVO_ATTENUATO", true),
-            Vaccino(23, "Rotavirus", "VIVO_ATTENUATO", true),
-            Vaccino(24, "Febbre gialla", "VIVO_ATTENUATO", true),
-            Vaccino(25, "Polio OPV", "VIVO_ATTENUATO", true),
-            Vaccino(26, "Tifo orale (Ty21a)", "VIVO_ATTENUATO", true),
-            Vaccino(27, "BCG", "VIVO_ATTENUATO", true),
-            Vaccino(30, "Vaccini vivi per viaggi internazionali", "VIVO_ATTENUATO", true)
-        )
-        vaccini.forEach { vaccinoDao.inserisciVaccino(it) }
+        MotoreDecisionale.BASE_VACCINES.forEach { base ->
+            val vaccino = Vaccino(
+                nome = base.name,
+                tipo = base.type.name,
+                vivoAttenuato = base.type == VaccineType.LIVE
+            )
+            vaccinoDao.inserisciVaccino(vaccino)
+        }
     }
 }

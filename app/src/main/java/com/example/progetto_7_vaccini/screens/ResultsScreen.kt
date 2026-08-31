@@ -101,6 +101,7 @@ fun ResultsContent(
     val recommended    = recommendations.filter { it.status == VaccineStatus.RECOMMENDED }
     val contraindicated = recommendations.filter { it.status == VaccineStatus.CONTRAINDICATED }
     val alreadyDone    = recommendations.filter { it.status == VaccineStatus.ALREADY_DONE }
+    val caution        = recommendations.filter { it.status == VaccineStatus.CAUTION }
     
     val essential      = recommended.filter { it.priority == VaccinePriority.ESSENTIAL }
     val routine        = recommended.filter { it.priority != VaccinePriority.ESSENTIAL }
@@ -173,6 +174,22 @@ fun ResultsContent(
 
         items(contraindicated) { vaccine ->
             VaccineCard(vaccine = vaccine)
+        }
+
+        // ── Caution / Da Valutare ──────────────────────────────────────────
+        if (caution.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(4.dp))
+                SectionHeader(
+                    title     = "Vaccini da valutare",
+                    count     = caution.size,
+                    isPositive = false,
+                    isWarning = true
+                )
+            }
+            items(caution) { vaccine ->
+                VaccineCard(vaccine = vaccine)
+            }
         }
 
         // ── Already Done ──────────────────────────────────────────────────
@@ -274,9 +291,22 @@ private fun DisclaimerCard() {
 }
 
 @Composable
-private fun SectionHeader(title: String, count: Int, isPositive: Boolean) {
-    val iconBg    = if (isPositive) Emerald100 else Red100
-    val iconTint  = if (isPositive) Emerald700  else Red700
+private fun SectionHeader(title: String, count: Int, isPositive: Boolean, isWarning: Boolean = false) {
+    val iconBg    = when {
+        isWarning -> Amber100
+        isPositive -> Emerald100
+        else -> Red100
+    }
+    val iconTint  = when {
+        isWarning -> Amber700
+        isPositive -> Emerald700
+        else -> Red700
+    }
+    val iconImage = when {
+        isWarning -> Icons.Default.Warning
+        isPositive -> Icons.Default.Check
+        else -> Icons.Default.Close
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -291,7 +321,7 @@ private fun SectionHeader(title: String, count: Int, isPositive: Boolean) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector        = if (isPositive) Icons.Default.Check else Icons.Default.Close,
+                imageVector        = iconImage,
                 contentDescription = null,
                 tint               = iconTint,
                 modifier           = Modifier.size(18.dp)
