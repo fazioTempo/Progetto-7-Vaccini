@@ -203,9 +203,9 @@ class MainActivity : ComponentActivity() {
                                         sexLabel = sex,
                                         biologicName = biologic.nome,
                                         age = age,
-                                        selectedConditionIds = conditions,
+                                        selectedConditions = dbConditionOptions.filter { it.idCondizione in conditions },
                                         completedVaccineIds = history,
-                                        database = database
+                                        tuttiVacciniDb = dbVaccineOptions
                                     )
                                     currentScreen = AppScreen.RESULTS
                                 }

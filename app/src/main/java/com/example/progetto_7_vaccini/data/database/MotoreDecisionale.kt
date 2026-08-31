@@ -440,14 +440,14 @@ class MotoreDecisionale {
         // 2. Recupero Condizioni Cliniche dal DB
         val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(idPaziente)
         val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
-        val conditions = condPaziente.mapNotNull { cp ->
+        val selectedConditions = condPaziente.mapNotNull { cp ->
             tutteCondDb.find { it.idCondizione == cp.idCondizione }
         }
         
         // 3. Recupero Storia Vaccinale dal DB
         val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(idPaziente)
-        val tuttiVaccDb = database.vaccinoDao().getTuttiVaccini()
-        val historyIds = vaccPaziente.map { it.idVaccino }.toSet()
+        val tuttiVacciniDb = database.vaccinoDao().getTuttiVaccini()
+        val completedVaccineIds = vaccPaziente.map { it.idVaccino }.toSet()
         
         val age = DateUtils.calculateAge(paziente.dataNascita)
         val sexLabel = if (paziente.sesso == Sesso.MASCHIO) "Maschio" else "Femmina"
@@ -456,16 +456,15 @@ class MotoreDecisionale {
             sexLabel = sexLabel,
             biologicName = biologicName,
             age = age,
-            selectedConditionIds = conditions.map { it.idCondizione }.toSet(),
-            completedVaccineIds = historyIds,
-            database = database
+            selectedConditions = selectedConditions,
+            completedVaccineIds = completedVaccineIds,
+            tuttiVacciniDb = tuttiVacciniDb
         )
         
         // 5. Salvataggio Esiti nel DB
         val raccomandazioneDao = database.raccomandazioneVaccinoDao()
-        val tuttiVaccini = database.vaccinoDao().getTuttiVaccini()
         raccomandazioni.forEach { rec ->
-            val idVaccino = tuttiVaccini.find { it.nome == rec.name }?.idVaccino ?: 0L
+            val idVaccino = tuttiVacciniDb.find { it.nome == rec.name }?.idVaccino ?: 0L
             if (idVaccino != 0L) {
                 raccomandazioneDao.inserisciRaccomandazione(
                     RaccomandazioneVaccino(
@@ -485,18 +484,14 @@ class MotoreDecisionale {
         return raccomandazioni
     }
 
-    suspend fun calcolaVolatile(
+    fun calcolaVolatile(
         sexLabel: String,
         biologicName: String,
         age: Int?,
-        selectedConditionIds: Set<Long>,
+        selectedConditions: List<CondizioneClinica>,
         completedVaccineIds: Set<Long>,
-        database: AppDatabase
+        tuttiVacciniDb: List<Vaccino>
     ): List<VaccineRec> {
-        val tutteCondDb = database.condizioneClinicaDao().getTutteLeCondizioni()
-        val selectedConditions = tutteCondDb.filter { it.idCondizione in selectedConditionIds }
-
-        val tuttiVacciniDb = database.vaccinoDao().getTuttiVaccini()
         val completedVaccineNames = tuttiVacciniDb.filter { it.idVaccino in completedVaccineIds }.map { it.nome }.toSet()
 
         val overrides = getOverridesForBiologic(biologicName)
