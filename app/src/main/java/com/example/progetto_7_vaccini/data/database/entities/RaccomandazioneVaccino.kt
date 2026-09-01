@@ -30,5 +30,13 @@ data class RaccomandazioneVaccino(
 
     val idVaccino: Long,
 
-    val esito: EsitoVaccino
+    val esito: EsitoVaccino,
+
+    val brand: String? = null,
+
+    val motivazione: String,
+
+    val tempistiche: String? = null,
+
+    val priorita: String // Salviamo come stringa l'enum VaccinePriority
 )

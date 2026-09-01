@@ -3,6 +3,7 @@ package com.example.progetto_7_vaccini.data.database
 import com.example.progetto_7_vaccini.data.database.dao.CondizioneClinicaDao
 import com.example.progetto_7_vaccini.data.database.entities.*
 import com.example.progetto_7_vaccini.data.database.dao.VaccinoDao
+import com.example.progetto_7_vaccini.data.models.VaccineType
 
 object DatabaseInitializer {
 
@@ -93,7 +94,7 @@ object DatabaseInitializer {
         MotoreDecisionale.BASE_VACCINES.forEach { base ->
             val vaccino = Vaccino(
                 nome = base.name,
-                tipo = base.type.name,
+                tipo = base.type,
                 vivoAttenuato = base.type == VaccineType.LIVE
             )
             vaccinoDao.inserisciVaccino(vaccino)
