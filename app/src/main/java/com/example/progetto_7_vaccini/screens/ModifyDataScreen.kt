@@ -20,6 +20,7 @@ import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.data.database.entities.CondizioneClinica
 import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.data.database.entities.Vaccino
 import com.example.progetto_7_vaccini.ui.theme.*
 
@@ -29,7 +30,7 @@ fun ModifyDataScreen(
     initialName: String,
     initialSurname: String,
     initialBirthDate: String,
-    initialSex: String?,
+    initialSex: Sesso?,
     initialBiologic: CuraBiologica?,
     initialConditions: Set<Long>,
     initialHistory: Set<Long>,
@@ -39,12 +40,12 @@ fun ModifyDataScreen(
     vaccineOptions: List<Vaccino> = emptyList(),
     onBack: () -> Unit,
     onEmailUpdate: (String, (String?) -> Unit) -> Unit,
-    onConfirm: (nome: String, cognome: String, birthDate: String, sex: String, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
+    onConfirm: (nome: String, cognome: String, birthDate: String, sex: Sesso, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf(initialName) }
     var surname      by rememberSaveable { mutableStateOf(initialSurname) }
     var birthDate    by rememberSaveable { mutableStateOf(initialBirthDate) }
-    var sex          by rememberSaveable { mutableStateOf<String?>(initialSex) }
+    var sex          by rememberSaveable { mutableStateOf<Sesso?>(initialSex) }
     var biologic     by rememberSaveable { mutableStateOf<CuraBiologica?>(initialBiologic) }
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }

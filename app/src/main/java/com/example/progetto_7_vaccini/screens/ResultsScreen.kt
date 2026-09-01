@@ -30,8 +30,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.progetto_7_vaccini.data.database.*
 import com.example.progetto_7_vaccini.data.database.entities.*
+import com.example.progetto_7_vaccini.data.models.*
 import com.example.progetto_7_vaccini.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,13 +40,15 @@ fun ResultsScreen(
     patientName    : String,
     patientSurname : String,
     patientAge     : Int?,
-    sex            : String,
+    sex            : Sesso,
     biologic       : CuraBiologica,
     recommendations: List<VaccineRec>,
     onBack         : () -> Unit
 ) {
     Scaffold(
         topBar = {
+// ...
+// (omitted for brevity, but I'll provide full block)
             Column(
                 modifier = Modifier.background(Teal900)
                     .fillMaxWidth()
@@ -80,7 +82,7 @@ fun ResultsScreen(
             patientName = patientName,
             patientSurname = patientSurname,
             patientAge = patientAge,
-            sex = sex,
+            sex = if (sex == Sesso.MASCHIO) "Maschio" else "Femmina",
             biologic = biologic,
             recommendations = recommendations,
             modifier = Modifier.padding(padding)

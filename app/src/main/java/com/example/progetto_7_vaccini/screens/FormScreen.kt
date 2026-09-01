@@ -25,6 +25,7 @@ import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.ValidationUtils
 import com.example.progetto_7_vaccini.data.database.entities.CondizioneClinica
 import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 import com.example.progetto_7_vaccini.data.database.entities.Vaccino
 import com.example.progetto_7_vaccini.ui.theme.*
 
@@ -34,7 +35,7 @@ fun FormScreen(
     initialName: String = "",
     initialSurname: String = "",
     initialBirthDate: String = "",
-    initialSex: String? = null,
+    initialSex: Sesso? = null,
     initialBiologic: CuraBiologica? = null,
     initialConditions: Set<Long> = emptySet(),
     initialHistory: Set<Long> = emptySet(),
@@ -42,12 +43,12 @@ fun FormScreen(
     conditionOptions: List<CondizioneClinica> = emptyList(),
     vaccineOptions: List<Vaccino> = emptyList(),
     onBack: () -> Unit,
-    onSubmit: (nome: String, cognome: String, birthDate: String, sex: String, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
+    onSubmit: (nome: String, cognome: String, birthDate: String, sex: Sesso, biologic: CuraBiologica, conditions: Set<Long>, history: Set<Long>) -> Unit
 ) {
     var name         by rememberSaveable { mutableStateOf(initialName) }
     var surname      by rememberSaveable { mutableStateOf(initialSurname) }
     var birthDate    by rememberSaveable { mutableStateOf(initialBirthDate) }
-    var sex          by rememberSaveable { mutableStateOf<String?>(initialSex) }
+    var sex          by rememberSaveable { mutableStateOf<Sesso?>(initialSex) }
     var biologic     by rememberSaveable { mutableStateOf<CuraBiologica?>(initialBiologic) }
     val conditions   = rememberSaveable { mutableStateOf(initialConditions) }
     val history      = rememberSaveable { mutableStateOf(initialHistory) }
@@ -181,8 +182,8 @@ fun VaccineFormContent(
     onSurnameChange: (String) -> Unit,
     birthDate: String,
     onBirthDateChange: (String) -> Unit,
-    sex: String?,
-    onSexChange: (String) -> Unit,
+    sex: Sesso?,
+    onSexChange: (Sesso) -> Unit,
     biologic: CuraBiologica?,
     onBiologicChange: (CuraBiologica) -> Unit,
     conditions: Set<Long>,
@@ -197,7 +198,7 @@ fun VaccineFormContent(
     var sexExpanded      by remember { mutableStateOf(false) }
     var biologicExpanded by remember { mutableStateOf(false) }
 
-    val sexOptions = listOf("Maschio", "Femmina")
+    val sexOptions = listOf(Sesso.MASCHIO, Sesso.FEMMINA)
 
     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         // ── Patient name & surname ────────────────────────────────────────
@@ -296,7 +297,11 @@ fun VaccineFormContent(
             onExpandedChange = { sexExpanded = !sexExpanded }
         ) {
             OutlinedTextField(
-                value         = sex ?: "",
+                value         = when(sex) {
+                    Sesso.MASCHIO -> "Maschio"
+                    Sesso.FEMMINA -> "Femmina"
+                    else -> ""
+                },
                 onValueChange = {},
                 readOnly      = true,
                 placeholder   = { Text("Seleziona…", color = Slate400) },
@@ -312,7 +317,7 @@ fun VaccineFormContent(
             ) {
                 sexOptions.forEach { option ->
                     DropdownMenuItem(
-                        text    = { Text(option) },
+                        text    = { Text(if (option == Sesso.MASCHIO) "Maschio" else "Femmina") },
                         onClick = {
                             onSexChange(option)
                             sexExpanded = false

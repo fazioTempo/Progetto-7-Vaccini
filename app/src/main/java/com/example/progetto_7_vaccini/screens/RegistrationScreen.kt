@@ -48,7 +48,7 @@ fun RegistrationScreen(
     var name by rememberSaveable { mutableStateOf("") }
     var surname by rememberSaveable { mutableStateOf("") }
     var birthDate by rememberSaveable { mutableStateOf("") }
-    var sex by rememberSaveable { mutableStateOf<String?>(null) }
+    var sex by rememberSaveable { mutableStateOf<Sesso?>(null) }
     var biologic by rememberSaveable { mutableStateOf<CuraBiologica?>(null) }
     val conditions = rememberSaveable { mutableStateOf(setOf<Long>()) }
     val history = rememberSaveable { mutableStateOf(setOf<Long>()) }
@@ -284,7 +284,7 @@ fun RegistrationScreen(
                                     nome = name,
                                     cognome = surname,
                                     dataNascita = birthDate,
-                                    sesso = if (sex == "Maschio") Sesso.MASCHIO else Sesso.FEMMINA
+                                    sesso = sex ?: Sesso.MASCHIO
                                 )
                             )
 

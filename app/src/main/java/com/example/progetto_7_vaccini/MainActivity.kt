@@ -4,38 +4,40 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.LaunchedEffect
-import com.example.progetto_7_vaccini.data.DateUtils
-import com.example.progetto_7_vaccini.data.ValidationUtils
-import com.example.progetto_7_vaccini.data.database.MotoreDecisionale
-import com.example.progetto_7_vaccini.data.database.VaccineRec
-import com.example.progetto_7_vaccini.data.database.entities.*
-import com.example.progetto_7_vaccini.screens.*
-import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.compose.runtime.rememberCoroutineScope
+import com.example.progetto_7_vaccini.data.DateUtils
 import com.example.progetto_7_vaccini.data.database.DatabaseInitializer
 import com.example.progetto_7_vaccini.data.database.DatabaseProvider
+import com.example.progetto_7_vaccini.data.database.entities.*
+import com.example.progetto_7_vaccini.data.models.VaccineRec
+import com.example.progetto_7_vaccini.screens.*
+import com.example.progetto_7_vaccini.ui.MainViewModel
+import com.example.progetto_7_vaccini.ui.theme.VaccineBiologicTheme
 import kotlinx.coroutines.launch
-import androidx.compose.material3.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.Alignment
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.Icons
-import com.example.progetto_7_vaccini.data.database.entities.Sesso
 
 enum class AppScreen {
     LANDING, LOGIN, REGISTER, FORM, RESULTS, NEW_PASSWORD, LOGGED_USER, MODIFY_DATA
 }
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: MainViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return MainViewModel(DatabaseProvider.getDatabase(applicationContext)) as T
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,10 +52,13 @@ class MainActivity : ComponentActivity() {
                 // Navigation state
                 var currentScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
                 var previousScreen by rememberSaveable { mutableStateOf(AppScreen.LANDING) }
-                var userRole by rememberSaveable { mutableStateOf<String?>(null) } // "PAZIENTE", "MEDICO" o null (Ospite)
+                var userRole by rememberSaveable { mutableStateOf<String?>(null) } 
                 var currentUserEmail by rememberSaveable { mutableStateOf<String?>(null) }
                 var actualPassword by rememberSaveable { mutableStateOf("") }
                 var currentPatientId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+                // Observe ViewModel
+                val results by viewModel.recommendations.collectAsState()
 
                 // Options from DB
                 var dbBiologicOptions by remember { mutableStateOf<List<CuraBiologica>>(emptyList()) }
@@ -71,16 +76,14 @@ class MainActivity : ComponentActivity() {
                 val coroutineScope = rememberCoroutineScope()
                 
                 // Form data state
-                var results by rememberSaveable { mutableStateOf<List<VaccineRec>?>(null) }
                 var patientName by rememberSaveable { mutableStateOf("") }
                 var patientSurname by rememberSaveable { mutableStateOf("") }
                 var patientBirthDate by rememberSaveable { mutableStateOf("") }
                 var patientAge by rememberSaveable { mutableStateOf<Int?>(null) }
-                var patientSex by rememberSaveable { mutableStateOf<String?>(null) }
+                var patientSex by rememberSaveable { mutableStateOf<Sesso?>(null) }
                 var patientBiologic by rememberSaveable { mutableStateOf<CuraBiologica?>(null) }
                 var patientConditions by rememberSaveable { mutableStateOf(setOf<Long>()) }
                 var patientHistory by rememberSaveable { mutableStateOf(setOf<Long>()) }
-                var isEditingPatient by rememberSaveable { mutableStateOf(false) }
                 var doctorPatients by rememberSaveable { mutableStateOf<List<Paziente>>(emptyList()) }
 
                 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +91,7 @@ class MainActivity : ComponentActivity() {
                     AppScreen.LANDING -> {
                         LandingScreen(
                             onGuestClick = {
-                                // Reset dei dati paziente per l'ospite
+                                viewModel.clearRecommendations()
                                 patientName = ""
                                 patientSurname = ""
                                 patientBirthDate = ""
@@ -97,10 +100,8 @@ class MainActivity : ComponentActivity() {
                                 patientBiologic = null
                                 patientConditions = emptySet()
                                 patientHistory = emptySet()
-                                results = null
 
                                 userRole = null
-                                isEditingPatient = false
                                 currentScreen = AppScreen.FORM
                             },
                             onLoginClick = { currentScreen = AppScreen.LOGIN },
@@ -127,7 +128,6 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 } else if (role == "PAZIENTE") {
-                                    // Pre-carichiamo i dati del paziente per i risultati
                                     coroutineScope.launch {
                                         val utente = database.utenteDao().getUtenteByEmail(email)
                                         val paziente = utente?.let { database.pazienteDao().getPazienteByUtente(it.idUtente) }
@@ -138,19 +138,17 @@ class MainActivity : ComponentActivity() {
                                             patientSurname = paziente.cognome
                                             patientBirthDate = paziente.dataNascita
                                             patientAge = DateUtils.calculateAge(paziente.dataNascita)
-                                            patientSex = if (paziente.sesso == Sesso.MASCHIO) "Maschio" else "Femmina"
+                                            patientSex = paziente.sesso
 
                                             patientBiologic = database.curaBiologicaDao().getCura(paziente.idCura)
 
-                                            // Caricamento condizioni dal DB
                                             val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
                                             patientConditions = condPaziente.map { it.idCondizione }.toSet()
 
-                                            // Caricamento storia vaccinale dal DB
                                             val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(paziente.idPaziente)
                                             patientHistory = vaccPaziente.map { it.idVaccino }.toSet()
 
-                                            results = MotoreDecisionale().calcolaRaccomandazioniPerPaziente(database, paziente.idPaziente)
+                                            viewModel.loadRecommendations(paziente.idPaziente)
                                             currentScreen = AppScreen.LOGGED_USER
                                         }
                                     }
@@ -197,18 +195,15 @@ class MainActivity : ComponentActivity() {
                                 patientConditions = conditions
                                 patientHistory = history
 
-                                // Per l'ospite, il calcolo deve essere fatto "volatilmente"
-                                coroutineScope.launch {
-                                    results = MotoreDecisionale().calcolaVolatile(
-                                        sexLabel = sex,
-                                        biologicName = biologic.nome,
-                                        age = age,
-                                        selectedConditions = dbConditionOptions.filter { it.idCondizione in conditions },
-                                        completedVaccineIds = history,
-                                        tuttiVacciniDb = dbVaccineOptions
-                                    )
-                                    currentScreen = AppScreen.RESULTS
-                                }
+                                viewModel.calculateGuest(
+                                    sex = if (sex == Sesso.MASCHIO) "Maschio" else "Femmina",
+                                    biologic = biologic,
+                                    age = age,
+                                    conditions = dbConditionOptions.filter { it.idCondizione in conditions },
+                                    history = history,
+                                    vaccineOptions = dbVaccineOptions
+                                )
+                                currentScreen = AppScreen.RESULTS
                             }
                         )
                     }
@@ -218,14 +213,13 @@ class MainActivity : ComponentActivity() {
                             patientName    = patientName,
                             patientSurname = patientSurname,
                             patientAge     = patientAge,
-                            sex            = patientSex!!,
+                            sex            = patientSex ?: Sesso.MASCHIO,
                             biologic       = patientBiologic!!,
-                            recommendations = results!!,
+                            recommendations = results,
                             onBack = {
                                 if (userRole == "MEDICO") {
                                     currentScreen = AppScreen.LOGGED_USER
                                 } else {
-                                    // Guest torna al form
                                     currentScreen = AppScreen.FORM
                                 }
                             }
@@ -271,10 +265,8 @@ class MainActivity : ComponentActivity() {
                                 patientConditions = conditions
                                 patientHistory = history
 
-                                // SALVATAGGIO NEL DB
                                 coroutineScope.launch {
                                     currentPatientId?.let { id ->
-                                        // 1. Aggiorna dati base e cura
                                         val p = database.pazienteDao().getPaziente(id)
                                         if (p != null) {
                                             database.pazienteDao().inserisciPaziente(
@@ -282,13 +274,12 @@ class MainActivity : ComponentActivity() {
                                                     nome = name,
                                                     cognome = surname,
                                                     dataNascita = birthDate,
-                                                    sesso = if (sex == "Maschio") Sesso.MASCHIO else Sesso.FEMMINA,
+                                                    sesso = sex,
                                                     idCura = biologic.idCura
                                                 )
                                             )
                                         }
 
-                                        // 2. Aggiorna Condizioni (Delete and Insert)
                                         database.pazienteCondizioneDao().cancellaTutteCondizioniPerPaziente(id)
                                         conditions.forEach { condId ->
                                             database.pazienteCondizioneDao().inserisciPazienteCondizione(
@@ -296,7 +287,6 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
 
-                                        // 3. Aggiorna Storia Vaccinale (Delete and Insert)
                                         database.vaccinazioneDao().cancellaTutteVaccinazioniPerPaziente(id)
                                         history.forEach { vaccinoId ->
                                             database.vaccinazioneDao().inserisciVaccinazione(
@@ -307,8 +297,7 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
 
-                                        // 4. Ricalcola tutto dal DB
-                                        results = MotoreDecisionale().calcolaRaccomandazioniPerPaziente(database, id)
+                                        viewModel.loadRecommendations(id, forceRefresh = true)
                                     }
                                 }
 
@@ -326,7 +315,7 @@ class MainActivity : ComponentActivity() {
                             patientAge = patientAge,
                             patientSex = patientSex,
                             patientBiologic = patientBiologic,
-                            recommendations = results,
+                            recommendations = results.takeIf { it.isNotEmpty() },
                             doctorPatients = doctorPatients,
                             onLogout = { currentScreen = AppScreen.LANDING },
                             onModificaDati = { currentScreen = AppScreen.MODIFY_DATA },
@@ -347,18 +336,17 @@ class MainActivity : ComponentActivity() {
                                     patientSurname = paziente.cognome
                                     patientBirthDate = paziente.dataNascita
                                     patientAge = DateUtils.calculateAge(paziente.dataNascita)
-                                    patientSex = if (paziente.sesso == Sesso.MASCHIO) "Maschio" else "Femmina"
+                                    patientSex = paziente.sesso
 
                                     patientBiologic = database.curaBiologicaDao().getCura(paziente.idCura)
 
-                                    // Caricamento condizioni e storia
                                     val condPaziente = database.pazienteCondizioneDao().getCondizioniByPaziente(paziente.idPaziente)
                                     patientConditions = condPaziente.map { it.idCondizione }.toSet()
 
                                     val vaccPaziente = database.vaccinazioneDao().getVaccinazioniByPaziente(paziente.idPaziente)
                                     patientHistory = vaccPaziente.map { it.idVaccino }.toSet()
 
-                                    results = MotoreDecisionale().calcolaRaccomandazioniPerPaziente(database, paziente.idPaziente)
+                                    viewModel.loadRecommendations(paziente.idPaziente)
 
                                     previousScreen = AppScreen.LOGGED_USER
                                     currentScreen = AppScreen.RESULTS

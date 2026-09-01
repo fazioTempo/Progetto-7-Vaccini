@@ -15,9 +15,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.ui.text.font.FontWeight
-import com.example.progetto_7_vaccini.data.database.VaccineRec
+import com.example.progetto_7_vaccini.data.models.VaccineRec
 import com.example.progetto_7_vaccini.data.database.entities.Paziente
 import com.example.progetto_7_vaccini.data.database.entities.CuraBiologica
+import com.example.progetto_7_vaccini.data.database.entities.Sesso
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +28,7 @@ fun LoggedUserScreen(
     patientName: String,
     patientSurname: String,
     patientAge: Int?,
-    patientSex: String?,
+    patientSex: Sesso?,
     patientBiologic: CuraBiologica?,
     recommendations: List<VaccineRec>?,
     doctorPatients: List<Paziente> = emptyList(),
@@ -39,7 +40,7 @@ fun LoggedUserScreen(
     val welcomeTitle = if (userRole == "MEDICO") {
         "Salve Dr. $patientSurname"
     } else {
-        if (patientSex == "Femmina") "Bentornata $patientName" else "Bentornato $patientName"
+        if (patientSex == Sesso.FEMMINA) "Bentornata $patientName" else "Bentornato $patientName"
     }
 
     Scaffold(
@@ -126,7 +127,7 @@ fun LoggedUserScreen(
                         patientName = patientName,
                         patientSurname = patientSurname,
                         patientAge = patientAge,
-                        sex = patientSex,
+                        sex = if (patientSex == Sesso.MASCHIO) "Maschio" else "Femmina",
                         biologic = patientBiologic,
                         recommendations = recommendations
                     )

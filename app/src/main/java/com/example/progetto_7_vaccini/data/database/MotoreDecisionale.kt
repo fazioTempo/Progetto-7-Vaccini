@@ -2,37 +2,8 @@ package com.example.progetto_7_vaccini.data.database
 
 import com.example.progetto_7_vaccini.data.database.entities.*
 import com.example.progetto_7_vaccini.data.DateUtils
+import com.example.progetto_7_vaccini.data.models.*
 import java.io.Serializable
-
-// ── Modelli di dominio (Migrati da VaccineData) ──────────────────────────────
-
-enum class VaccineStatus { RECOMMENDED, CONTRAINDICATED, CAUTION, ALREADY_DONE }
-enum class VaccinePriority { ESSENTIAL, HIGH, ROUTINE }
-enum class VaccineType { LIVE, INACTIVATED, RECOMBINANT, SUBUNIT, MRNA, TOXOID }
-enum class ImmunoLevel(val label: String, val color: ImmunoColor) {
-    LOW("Bassa", ImmunoColor.GREEN),
-    MODERATE("Moderata", ImmunoColor.YELLOW),
-    HIGH("Alta", ImmunoColor.ORANGE),
-    SEVERE("Molto alta", ImmunoColor.RED)
-}
-enum class ImmunoColor { GREEN, YELLOW, ORANGE, RED }
-
-data class VaccineRec(
-    val name: String,
-    val brand: String? = null,
-    val type: VaccineType,
-    val status: VaccineStatus,
-    val reason: String,
-    val timing: String? = null,
-    val priority: VaccinePriority = VaccinePriority.ROUTINE
-) : Serializable
-
-data class BiologicProfile(
-    val immunoLevel: ImmunoLevel,
-    val keyRisks: List<String>,
-    val generalNote: String,
-    val preStartNote: String? = null
-) : Serializable
 
 class MotoreDecisionale {
 
@@ -452,7 +423,7 @@ class MotoreDecisionale {
         val age = DateUtils.calculateAge(paziente.dataNascita)
         val sexLabel = if (paziente.sesso == Sesso.MASCHIO) "Maschio" else "Femmina"
         
-        val raccomandazioni = calcolaVolatile(
+        return calcolaVolatile(
             sexLabel = sexLabel,
             biologicName = biologicName,
             age = age,
@@ -460,28 +431,6 @@ class MotoreDecisionale {
             completedVaccineIds = completedVaccineIds,
             tuttiVacciniDb = tuttiVacciniDb
         )
-        
-        // 5. Salvataggio Esiti nel DB
-        val raccomandazioneDao = database.raccomandazioneVaccinoDao()
-        raccomandazioni.forEach { rec ->
-            val idVaccino = tuttiVacciniDb.find { it.nome == rec.name }?.idVaccino ?: 0L
-            if (idVaccino != 0L) {
-                raccomandazioneDao.inserisciRaccomandazione(
-                    RaccomandazioneVaccino(
-                        idPaziente = idPaziente,
-                        idVaccino = idVaccino,
-                        esito = when(rec.status) {
-                            VaccineStatus.RECOMMENDED -> EsitoVaccino.CONSENTITO
-                            VaccineStatus.CONTRAINDICATED -> EsitoVaccino.CONTROINDICATO
-                            VaccineStatus.CAUTION -> EsitoVaccino.VALUTARE
-                            VaccineStatus.ALREADY_DONE -> EsitoVaccino.FATTO
-                        }
-                    )
-                )
-            }
-        }
-        
-        return raccomandazioni
     }
 
     fun calcolaVolatile(
